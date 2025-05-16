@@ -1,40 +1,44 @@
-name: IPZS bot
+name: IPZS Bot Scheduler
 
 on:
-  workflow_dispatch:
   schedule:
-    # Dicembre-Giugno: ogni 5 minuti tra le 6:00 e le 23:55 ora italiana (~UTC 5:00-22:55)
-    - cron: '0,5,10,15,20,25,30,35,40,45,50,55 5-22 * 12,1,2,3,4,5,6 *'
-    # Luglio-Novembre: ogni 15 minuti tra le 6:00 e le 23:45 ora italiana (~UTC 4:00-21:45)
-    - cron: '0,15,30,45 4-21 * 7,8,9,10,11 *'
+    # Ogni 5 minuti da Dicembre a Giugno, tra le 7:00 e le 22:59
+    - cron: '*/5 7-22 * 12,1,2,3,4,5,6 *'
+    # Ogni 15 minuti da Luglio a Novembre, tra le 6:00 e le 22:59
+    - cron: '*/15 7-22 * 7,8,9,10,11 *'
+    # Notifica domenicale alle 13:00
+    - cron: '0 13 * * 0'
+  workflow_dispatch:
 
 jobs:
   run-bot:
+    name: Esegui IPZS Bot
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout repository
+      - name: 📥 Clona il repository
         uses: actions/checkout@v4
 
-      - name: Set up Python
+      - name: 🐍 Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.x'
+          python-version: '3.11'
 
-      - name: Install dependencies
-        run: pip install requests beautifulsoup4
-
-      - name: Run IPZS bot
-        run: python main.py
-
-      - name: Commit seen.txt if changed
+      - name: 📦 Installa dipendenze
         run: |
-          if git diff --quiet seen.txt; then
-            echo "Nessuna modifica a seen.txt"
-          else
-            git config user.name "github-actions"
-            git config user.email "github-actions@github.com"
-            git add seen.txt
-            git commit -m "Aggiorna seen.txt"
-            git pull --rebase
-            git push
-          fi
+          python -m pip install --upgrade pip
+          pip install requests beautifulsoup4
+
+      - name: 🚀 Avvia il bot
+        run: python main.py
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+
+      - name: 💾 Salva seen.txt (se modificato)
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add seen.txt last_alert.txt data_alerts.json
+          git commit -m "Aggiornamento automatico file di stato" || echo "Nessuna modifica da salvare"
+          git push || echo "Nessun push necessario"
