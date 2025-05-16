@@ -3,16 +3,16 @@ name: IPZS bot
 on:
   workflow_dispatch:
   schedule:
-    # Dicembre - Giugno: ogni 5 minuti dalle 6:00 alle 23:55
-    - cron: '*/5 6-23 * 12,1,2,3,4,5,6 *'
-    # Luglio - Novembre: ogni 15 minuti dalle 6:00 alle 23:45
-    - cron: '*/15 6-23 * 7,8,9,10,11 *'
+    # Dicembre-Giugno: ogni 5 minuti tra le 6:00 e le 23:55 ora italiana (~UTC 5:00-22:55)
+    - cron: '0,5,10,15,20,25,30,35,40,45,50,55 5-22 * 12,1,2,3,4,5,6 *'
+    # Luglio-Novembre: ogni 15 minuti tra le 6:00 e le 23:45 ora italiana (~UTC 4:00-21:45)
+    - cron: '0,15,30,45 4-21 * 7,8,9,10,11 *'
 
 jobs:
   run-bot:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repo
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Set up Python
@@ -21,24 +21,20 @@ jobs:
           python-version: '3.x'
 
       - name: Install dependencies
-        run: pip install -r requirements.txt
+        run: pip install requests beautifulsoup4
 
-      - name: Run script solo tra le 6:00 e le 23:59
+      - name: Run IPZS bot
+        run: python bot.py
+
+      - name: Commit seen.txt if changed
         run: |
-          hour=$(date +%H)
-          if [ "$hour" -ge 6 ] && [ "$hour" -lt 24 ]; then
-            echo "⏰ Avvio script: orario valido ($hour:00)"
-            python main.py
+          if git diff --quiet seen.txt; then
+            echo "Nessuna modifica a seen.txt"
           else
-            echo "❌ Orario non valido ($hour:00): script non eseguito."
-          fi
-
-      - name: Commit & Push se seen.txt cambia
-        run: |
-          git config user.name "actions-user"
-          git config user.email "actions@github.com"
-          git add seen.txt
-          git diff --cached --quiet || {
+            git config user.name "github-actions"
+            git config user.email "github-actions@github.com"
+            git add seen.txt
             git commit -m "Aggiorna seen.txt"
+            git pull --rebase
             git push
-          }
+          fi
