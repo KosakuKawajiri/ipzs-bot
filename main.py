@@ -70,15 +70,18 @@ def check_critical_links():
     alerts = []
     now = datetime.now()
 
-    # controlla se è già stata inviata una notifica questa settimana
     last_alert_file = "last_url_alert.txt"
     if os.path.exists(last_alert_file):
         with open(last_alert_file, "r") as f:
-            last_alert_time = datetime.fromisoformat(f.read().strip())
-            if (now - last_alert_time).days < 7:
-                return  # niente notifiche doppie
+            content = f.read().strip()
+            if content:
+                try:
+                    last_alert_time = datetime.fromisoformat(content)
+                    if (now - last_alert_time).days < 7:
+                        return  # Niente notifica se già inviata meno di 7 giorni fa
+                except ValueError:
+                    pass  # Se il contenuto è invalido, si procede con il controllo link
 
-    # controlla i link critici
     for url in [CATALOG_URL, HOMEPAGE_URL]:
         try:
             response = requests.get(url, timeout=10)
