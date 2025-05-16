@@ -1,1 +1,1 @@
-git add seen.txt && git commit -m "Aggiunto seen.txt iniziale
+
