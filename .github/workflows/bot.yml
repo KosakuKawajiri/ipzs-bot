@@ -24,7 +24,7 @@ jobs:
         run: pip install requests beautifulsoup4
 
       - name: Run IPZS bot
-        run: python bot.py
+        run: python main.py
 
       - name: Commit seen.txt if changed
         run: |
