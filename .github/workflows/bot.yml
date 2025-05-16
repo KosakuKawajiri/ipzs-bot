@@ -26,10 +26,11 @@ jobs:
       - name: Esegui il bot
         run: python main.py
 
-      - name: Commit aggiorna seen.txt se ci sono novità
+      - name: Commit e push di seen.txt
         run: |
           git config user.name "github-actions"
-          git config user.email "actions@github.com"
+          git config user.email "github-actions@github.com"
           git add seen.txt
-          git diff --cached --quiet || git commit -m "Aggiorna seen.txt"
+          git commit -m "Aggiorna seen.txt" || echo "Nessuna modifica da committare"
+          git pull --rebase
           git push
