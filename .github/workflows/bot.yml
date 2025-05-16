@@ -2,11 +2,11 @@ name: IPZS Bot Scheduler
 
 on:
   schedule:
-    # Ogni 5 minuti da Dicembre a Giugno, tra le 7:00 e le 22:59
+    # Esecuzione ogni 5 minuti da Dicembre a Giugno, tra le 7:00 e le 22:59
     - cron: '*/5 7-22 * 12,1,2,3,4,5,6 *'
-    # Ogni 15 minuti da Luglio a Novembre, tra le 6:00 e le 22:59
+    # Esecuzione ogni 15 minuti da Luglio a Novembre, tra le 7:00 e le 22:59
     - cron: '*/15 7-22 * 7,8,9,10,11 *'
-    # Notifica domenicale alle 13:00
+    # Notifica domenicale alle 13:00 per conferma routine attiva
     - cron: '0 13 * * 0'
   workflow_dispatch:
 
@@ -24,21 +24,21 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: 📦 Installa dipendenze
+      - name: 📦 Installa le dipendenze Python
         run: |
           python -m pip install --upgrade pip
           pip install requests beautifulsoup4
 
-      - name: 🚀 Avvia il bot
+      - name: 🚀 Avvia lo script main.py
         run: python main.py
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
 
-      - name: 💾 Salva seen.txt (se modificato)
+      - name: 💾 Commit file di stato aggiornati (se necessario)
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
-          git add seen.txt last_alert.txt data_alerts.json
-          git commit -m "Aggiornamento automatico file di stato" || echo "Nessuna modifica da salvare"
-          git push || echo "Nessun push necessario"
+          git add seen.txt last_alert.txt empty_runs.txt data_alerts.json || true
+          git diff --cached --quiet || git commit -m "Aggiornamento automatico file di stato"
+          git push || echo "Push non necessario o non riuscito (repository in sola lettura?)"
