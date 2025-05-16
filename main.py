@@ -5,9 +5,7 @@ import os
 
 # === CONFIGURAZIONE ===
 URL = "https://www.shop.ipzs.it/monete.html"
-KEYWORDS = ["tiratura limitata", "2 euro", "emissione", "commemorativa", "proof"]
-
-# Legge i segreti da GitHub Actions
+KEYWORDS = ["tiratura limitata", "2 euro", "emissione", "commemorativa", "proof", "emissione test"]
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
 CHAT_ID = os.getenv("CHAT_ID")
 
@@ -44,6 +42,12 @@ def check_site():
         soup = BeautifulSoup(res.text, "html.parser")
 
         items = soup.find_all("li", class_="item")
+
+        # AGGIUNGI UN BLOCCO FALSO PER IL TEST
+        fake_html = '<li class="item"><h2>EMISSIONE TEST SPECIALE</h2><a href="/it/emissione-test">Vai al prodotto</a><p>Questa è una tiratura limitata</p></li>'
+        fake_soup = BeautifulSoup(fake_html, "html.parser")
+        items.append(fake_soup.li)
+
         seen = load_seen_hashes()
         new_found = 0
 
