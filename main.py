@@ -1,14 +1,15 @@
 import requests
 from bs4 import BeautifulSoup
-import time
 import hashlib
 import os
 
 # === CONFIGURAZIONE ===
 URL = "https://www.shop.ipzs.it/monete.html"
 KEYWORDS = ["tiratura limitata", "2 euro", "emissione", "commemorativa", "proof"]
-TELEGRAM_TOKEN = "7341199633:AAEuCGfffO3N9dyZtCfM-SrlqBjByc1XtEU"
-CHAT_ID = 80114152  # <-- inserisci il tuo chat ID
+
+# Legge i segreti da GitHub Actions
+TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
+CHAT_ID = os.getenv("CHAT_ID")
 
 # === FUNZIONE TELEGRAM ===
 def send_telegram_message(message):
@@ -42,7 +43,7 @@ def check_site():
         res = requests.get(URL, timeout=10)
         soup = BeautifulSoup(res.text, "html.parser")
 
-        items = soup.find_all("li", class_="item")  # ogni moneta
+        items = soup.find_all("li", class_="item")
         seen = load_seen_hashes()
         new_found = 0
 
