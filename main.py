@@ -2,14 +2,16 @@ import requests
 from bs4 import BeautifulSoup
 import hashlib
 import os
+from datetime import datetime
 
 # === CONFIGURAZIONE ===
-URL = "https://www.shop.ipzs.it/monete.html"
-KEYWORDS = ["tiratura limitata", "2 euro", "emissione", "commemorativa", "proof", "emissione test"]
-TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
-CHAT_ID = os.getenv("CHAT_ID")
+CATALOG_URL = "https://www.shop.ipzs.it/it/catalog/category/view/s/monete/id/3/"
+HOMEPAGE_URL = "https://www.shop.ipzs.it/it/"
+KEYWORDS = ["tiratura limitata", "2 euro", "emissione", "commemorativa", "proof"]
+TELEGRAM_TOKEN = "7341199633:AAEuCGfffO3N9dyZtCfM-SrlqBjByc1XtEU"
+CHAT_ID = 80114152
 
-# === FUNZIONE TELEGRAM ===
+# === TELEGRAM ===
 def send_telegram_message(message):
     url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
     payload = {
@@ -18,37 +20,29 @@ def send_telegram_message(message):
         "parse_mode": "Markdown"
     }
     try:
-        response = requests.post(url, data=payload)
-        if response.status_code != 200:
-            print("Errore nell'invio Telegram:", response.text)
-    except Exception as e:
-        print("Errore connessione Telegram:", e)
+        requests.post(url, data=payload)
+    except:
+        pass
 
-# === CARICA HASH VECCHI ===
-def load_seen_hashes():
-    if not os.path.exists("seen.txt"):
+# === FILE HANDLING ===
+def load_file(filename):
+    if not os.path.exists(filename):
         return set()
-    with open("seen.txt", "r") as f:
+    with open(filename, "r") as f:
         return set(line.strip() for line in f.readlines())
 
-def save_seen_hash(content_hash):
-    with open("seen.txt", "a") as f:
-        f.write(content_hash + "\n")
+def append_to_file(filename, line):
+    with open(filename, "a") as f:
+        f.write(line + "\n")
 
-# === ESTRAI E VERIFICA CONTENUTI ===
-def check_site():
+# === SITO IPZS MONETE ===
+def check_monete_page():
     try:
-        res = requests.get(URL, timeout=10)
+        res = requests.get(CATALOG_URL, timeout=10)
         soup = BeautifulSoup(res.text, "html.parser")
-
         items = soup.find_all("li", class_="item")
 
-        # AGGIUNGI UN BLOCCO FALSO PER IL TEST
-        fake_html = '<li class="item"><h2>EMISSIONE TEST SPECIALE</h2><a href="/it/emissione-test">Vai al prodotto</a><p>Questa è una tiratura limitata</p></li>'
-        fake_soup = BeautifulSoup(fake_html, "html.parser")
-        items.append(fake_soup.li)
-
-        seen = load_seen_hashes()
+        seen = load_file("seen.txt")
         new_found = 0
 
         for item in items:
@@ -59,19 +53,54 @@ def check_site():
                     title_tag = item.find("h2")
                     title = title_tag.get_text(strip=True) if title_tag else "Nuova emissione IPZS!"
                     link_tag = item.find("a", href=True)
-                    link = link_tag["href"] if link_tag else URL
+                    link = link_tag["href"] if link_tag else CATALOG_URL
                     message = f"💰 *{title}*\n🔗 https://www.shop.ipzs.it{link}"
                     send_telegram_message(message)
-                    save_seen_hash(content_hash)
+                    append_to_file("seen.txt", content_hash)
                     new_found += 1
 
         if new_found == 0:
-            print("✅ Nessuna nuova emissione trovata.")
-        else:
-            print(f"📬 Inviate {new_found} notifiche Telegram.")
-    except Exception as e:
-        print("Errore durante il controllo del sito:", e)
+            append_to_file("empty_runs.txt", datetime.now().isoformat())
+        return new_found
+    except:
+        return -1  # errore generico, nessuna notifica inviata
 
-# === AVVIO SINGOLO ===
+# === CONTROLLO LINK STRATEGICI ===
+def check_critical_links():
+    alerts = []
+    now = datetime.now()
+
+    # controlla se è già stata inviata una notifica questa settimana
+    last_alert_file = "last_url_alert.txt"
+    if os.path.exists(last_alert_file):
+        with open(last_alert_file, "r") as f:
+            last_alert_time = datetime.fromisoformat(f.read().strip())
+            if (now - last_alert_time).days < 7:
+                return  # niente notifiche doppie
+
+    # controlla i link critici
+    for url in [CATALOG_URL, HOMEPAGE_URL]:
+        try:
+            response = requests.get(url, timeout=10)
+            if response.status_code != 200:
+                alerts.append(f"⚠️ Link non più valido: {url}")
+        except:
+            alerts.append(f"⚠️ Errore nel controllare: {url}")
+
+    if alerts:
+        send_telegram_message("🚨 *Attenzione: alcuni link IPZS potrebbero essere cambiati!*\n\n" + "\n".join(alerts))
+        with open(last_alert_file, "w") as f:
+            f.write(now.isoformat())
+
+# === NOTIFICA SETTIMANALE ===
+def send_weekly_ping():
+    now = datetime.now()
+    if now.weekday() == 6 and now.hour == 13:  # domenica ore 13
+        send_telegram_message("✅ Routine attiva: controllo IPZS automatico funzionante.")
+
+# === AVVIO ===
 if __name__ == "__main__":
-    check_site()
+    new_items = check_monete_page()
+    if new_items != -1:
+        check_critical_links()
+        send_weekly_ping()
