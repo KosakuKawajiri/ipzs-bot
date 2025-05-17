@@ -25,8 +25,15 @@ def send(text:str)->bool:
 # ────────── Helpers file
 ld=lambda fp: set(open(fp).read().splitlines()) if os.path.exists(fp) else set()
 sv=lambda fp,s: open(fp,"w").write("\n".join(sorted(s)))
-lj=lambda fp: json.load(open(fp)) if os.path.exists(fp) else {}
 sj=lambda fp,d: open(fp,"w").write(json.dumps(d,indent=2))
+def lj(fp):
+    if not os.path.exists(fp): 
+        return {}
+    try:
+        return json.load(open(fp, encoding="utf-8"))
+    except json.JSONDecodeError:
+        # file vuoto o corrotto → ripartiamo puliti
+        return {}
 
 # ────────── Scraping categoria
 def get_links(cat):
