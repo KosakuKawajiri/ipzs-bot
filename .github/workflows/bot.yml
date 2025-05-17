@@ -33,12 +33,12 @@ jobs:
         run: python main.py
         env:
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
-          CHAT_ID:        ${{ secrets.CHAT_ID }}    
+          CHAT_ID:        ${{ secrets.CHAT_ID }}
 
-      - name: 💾 Commit file di stato aggiornati (se necessario)
+      - name: 💾 Commit file di stato aggiornati
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
-          git add seen.txt last_alert.txt empty_runs.txt data_alerts.json || true
+          git add seen.txt low_mintage_alerts.txt date_alerts.json last_spider.json || true
           git diff --cached --quiet || git commit -m "Aggiornamento automatico file di stato"
-          git push || echo "Push non necessario o non riuscito (repository in sola lettura?)"
+          git push || echo "Push non necessario o non riuscito"   
