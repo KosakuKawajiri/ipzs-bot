@@ -22,8 +22,8 @@ DOMAIN = "www.shop.ipzs.it"
 
 # ---------- helper Telegram ----------
 def send_telegram_message(text:str)->bool:
-    token  = os.getenv("TELEGRAM_BOT_TOKEN")
-    chatid = os.getenv("TELEGRAM_CHAT_ID")
+    token  = os.getenv("TELEGRAM_TOKEN")
+    chatid = os.getenv("CHAT_ID")
     if not token or not chatid:
         print("TOKEN/CHAT_ID mancanti"); return False
     try:
