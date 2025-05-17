@@ -4,9 +4,9 @@ from datetime import datetime, timedelta
 
 # ───────────────────────── File di stato
 SEEN_FILE            = "seen.txt"
-LOW_STOCK_FILE       = "low_stock_alerts.txt"
+LOW_STOCK_FILE       = "low_mintage_alerts.txt"
 DATE_ALERTS_FILE     = "date_alerts.json"
-LAST_LINK_ALERT_FILE = "last_link_alert.txt"
+LAST_LINK_ALERT_FILE = "last_url_alert.txt"
 SPIDER_LOCK_FILE     = "last_spider.json"
 
 # ───────────────────────── URL radice (prime 5 pagine)
