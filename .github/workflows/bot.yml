@@ -32,8 +32,8 @@ jobs:
       - name: 🚀 Avvia lo script main.py
         run: python main.py
         env:
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          CHAT_ID:        ${{ secrets.CHAT_ID }}    
 
       - name: 💾 Commit file di stato aggiornati (se necessario)
         run: |
