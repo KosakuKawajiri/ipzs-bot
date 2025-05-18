@@ -2,11 +2,11 @@ name: IPZS Bot Scheduler
 
 on:
   schedule:
-    # Esecuzione ogni 15 minuti da Dicembre a Giugno, tra le 7:00/8.00 e le 21:59/22.59 (sono GMT+1/+2)
+    # Esecuzione ogni 15 minuti da Dicembre a Giugno, tra le 7:00/8:00 e le 21:59/22:59 (sono GMT+1/+2)
     - cron: '*/15 6-20 * 12,1,2,3,4,5,6 *'
-    # Esecuzione ogni 30 minuti da Luglio a Novembre, tra le 7:00/8.00 e le 21:59/22.59 (sono GMT+1/+2)
+    # Esecuzione ogni 30 minuti da Luglio a Novembre, tra le 7:00/8:00 e le 21:59/22:59 (sono GMT+1/+2)
     - cron: '*/30 6-20 * 7,8,9,10,11 *'
-    # Notifica domenicale alle 12:00/13.00 per conferma routine attiva (dipende da GMT+1 o GMT+2)
+    # Notifica domenicale alle 12:00/13:00 per conferma routine attiva (dipende da GMT+1 o GMT+2)
     - cron: '0 11 * * 0'
   workflow_dispatch:
 
