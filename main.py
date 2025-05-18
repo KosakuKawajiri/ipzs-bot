@@ -76,7 +76,7 @@ def pdate(t):
 
 # ────────── Notifiche
 def alert_low(p):
-    msg=(f"<b>Moneta a bassa tiratura</b>\n"
+    msg=(f"<b>MONETA A BASSA TIRATURA!</b>\n"
          f"- NOME MONETA: {p['nome']}\n"
          f"- PREZZO: {p['prezzo']}\n"
          f"- CONTINGENTE: {p['contingente']}\n"
@@ -89,9 +89,9 @@ def alert_low(p):
          f"- LINK: {p['link']}")
     send(msg)
 
-# ────────── Spider leggero (slot 7-19)
-SPIDER_HOURS=(7,19)
-def spider(start,max_urls=50,max_depth=3):
+# ────────── Spider medio (slot 6-18)
+SPIDER_HOURS=(6,18)
+def spider(start,max_urls=100,max_depth=4):
     from collections import deque
     q=deque([(u,0) for u in start]); seen=set(); prods=[]
     while q and len(seen)<max_urls:
@@ -146,7 +146,7 @@ def main():
         d=pdate(p["data disponibilita"])
         if d: bucket.setdefault(d.date(),[]).append(p)
     now=datetime.now(); tomorrow=(now+timedelta(days=1)).date()
-    if tomorrow in bucket and len(bucket[tomorrow])>=3 and now.hour>=8:
+    if tomorrow in bucket and len(bucket[tomorrow])>=3 and now.hour>=6:
         if dates.get(str(tomorrow))!=str(now.date()):
             msg=f"<b>{len(bucket[tomorrow])} monete disponibili il {tomorrow}</b>\n"
             msg+="\n".join("- "+x["nome"] for x in bucket[tomorrow])
@@ -154,7 +154,7 @@ def main():
 
     # ping domenicale
     if now.weekday()==6 and now.hour==13:
-        send("🔁 Bot IPZS attivo (ping domenicale)")
+        send("🔁 Bot IPZS attivo (controllo domenicale)")
 
     sv(SEEN_FILE,seen); sv(LOW_FILE,alerted); sj(DATE_FILE,dates)
 
