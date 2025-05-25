@@ -153,7 +153,7 @@ def main():
             send(msg); dates[str(tomorrow)]=str(now.date())
 
     # ping domenicale
-    if now.weekday()==6 and now.hour==13:
+    if now.weekday()==6 and now.hour==11:
         send("🔁 Bot IPZS attivo (controllo domenicale)")
 
     sv(SEEN_FILE,seen); sv(LOW_FILE,alerted); sj(DATE_FILE,dates)
