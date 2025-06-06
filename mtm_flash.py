@@ -8,6 +8,8 @@ from webdriver_manager.chrome import ChromeDriverManager
 
 # ─────────────── Login e carrello MTM Monaco
 
+MTM_SEEN_FILE = "seen_mtm.txt"
+
 def setup_driver_headless():
     """
     Configura un Chrome headless con webdriver-manager.
