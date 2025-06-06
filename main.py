@@ -24,7 +24,7 @@ DOMAIN = "[www.shop.ipzs.it](http://www.shop.ipzs.it)"
 # ──────────────── Telegram
 
 send = lambda msg: requests.post(
-f"[https://api.telegram.org/bot{os.getenv('TELEGRAM_TOKEN')}/sendMessage](https://api.telegram.org/bot{os.getenv%28'TELEGRAM_TOKEN'%29}/sendMessage)",
+f"[https://api.telegram.org/bot{os.getenv('TELEGRAM_TOKEN')}/sendMessage]",
 data={"chat_id": os.getenv("CHAT_ID"), "text": msg, "parse_mode": "HTML"})
 
 # ──────────────── Helpers
