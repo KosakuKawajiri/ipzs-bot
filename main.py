@@ -8,7 +8,7 @@ SEEN_FILE       = "seen.txt"
 LOW_FILE        = "low_mintage_alerts.txt"
 DATE_FILE       = "date_alerts.json"
 SPIDER_LOCK     = "last_spider.json"
-MTM_SEEN_FILE   = "seen_mtm.txt" \ 
+MTM_SEEN_FILE   = "seen_mtm.txt"
 
 # ──────────────── IPZS Config
 
