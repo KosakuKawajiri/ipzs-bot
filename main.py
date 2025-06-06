@@ -1,5 +1,4 @@
 from mtm_flash import setup_driver_headless, login_mtm, add_to_cart_and_checkout
-
 import requests, re, os, json, time
 from bs4 import BeautifulSoup
 from datetime import datetime, timedelta
@@ -176,7 +175,8 @@ def notify_dates(prods, alerts):
 
 def sunday_ping():
     now = datetime.now()
-    if now.weekday() == 6 and now.hour == 11: # ────────────────────────────── Alle 12.00/13.00 di domenica
+    # Domenica alle 12:00/13:00 locali corrisponde a 11:00 UTC
+    if now.weekday() == 6 and now.hour == 11:
         send("🔁 Check domenicale: bot attivo")
 
 # ──────────────── Spider IPZS
@@ -220,9 +220,8 @@ def spider(start, max_urls=50, max_depth=3):
     return prods
 
 # ──────────────── MTM Monaco
-MTM_ROOT      = "https://www.mtm-monaco.mc/index.php?route=common/home"
-MTM_DOMAIN    = "www.mtm-monaco.mc"
-MTM_SEEN_FILE = "seen_mtm.txt"
+MTM_ROOT    = "https://www.mtm-monaco.mc/index.php?route=common/home"
+MTM_DOMAIN  = "www.mtm-monaco.mc"
 
 def check_mtm_monaco():
     """
@@ -232,7 +231,7 @@ def check_mtm_monaco():
     aggiunte e il link al carrello.
     """
 
-    # Carica le righe di seen_mtm.txt: in questo caso contengono solo l'URL (no timestamp|url)
+    # Carica le righe di seen_mtm.txt (contengono solo l'URL)
     seen = set()
     if os.path.exists(MTM_SEEN_FILE):
         with open(MTM_SEEN_FILE, "r", encoding="utf-8") as f:
@@ -280,9 +279,8 @@ def check_mtm_monaco():
             new_products.append((title, price, link))
             seen.add(link)  # segno come “visto” immediatamente
 
-    # 3️⃣ Se non ci sono nuove monete, esco
+    # 3️⃣ Se non ci sono nuove monete, aggiorno seen_mtm.txt e esco
     if not new_products:
-        # Aggiorno comunque seen_mtm.txt (in modo che non venga svuotato ogni volta)
         with open(MTM_SEEN_FILE, "w", encoding="utf-8") as f:
             for url in seen:
                 f.write(url + "\n")
@@ -316,7 +314,7 @@ def check_mtm_monaco():
     # 7️⃣ Chiudo il driver
     driver.quit()
 
-    # 8️⃣ Salvo il nuovo seen_mtm.txt (solo gli URL, perché non servono timestamp qui)
+    # 8️⃣ Salvo il nuovo seen_mtm.txt (solo gli URL)
     with open(MTM_SEEN_FILE, "w", encoding="utf-8") as f:
         for url in seen:
             f.write(url + "\n")
