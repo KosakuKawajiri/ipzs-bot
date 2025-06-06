@@ -2,161 +2,188 @@ import requests, re, os, json, time
 from bs4 import BeautifulSoup
 from datetime import datetime, timedelta
 
-# ────────── File di stato
-SEEN_FILE  = "seen.txt"
-LOW_FILE   = "low_mintage_alerts.txt"
-DATE_FILE  = "date_alerts.json"
-SPIDER_LCK = "last_spider.json"
+# ──────────────── File di stato
 
-# ────────── URL di partenza
-CATEGORY_URLS = [f"https://www.shop.ipzs.it/it/catalog/category/view/s/monete/id/3/?p={i}" for i in range(1,6)]
-DOMAIN = "www.shop.ipzs.it"
+SEEN\_FILE       = "seen.txt"
+LOW\_FILE        = "low\_mintage\_alerts.txt"
+DATE\_FILE       = "date\_alerts.json"
+SPIDER\_LOCK     = "last\_spider.json"
+MTM\_SEEN\_FILE   = "seen\_mtm.txt"
 
-# ────────── Telegram
-def send(text:str)->bool:
-    token=os.getenv("TELEGRAM_TOKEN"); chat=os.getenv("CHAT_ID")
-    if not token or not chat: return False
-    try:
-        r=requests.post(f"https://api.telegram.org/bot{token}/sendMessage",
-                        data={"chat_id":chat,"text":text,"parse_mode":"HTML"},timeout=10)
-        r.raise_for_status(); return True
-    except: return False
+# ──────────────── IPZS Config
 
-# ────────── Helpers file
-ld=lambda fp: set(open(fp).read().splitlines()) if os.path.exists(fp) else set()
-sv=lambda fp,s: open(fp,"w").write("\n".join(sorted(s)))
-sj=lambda fp,d: open(fp,"w").write(json.dumps(d,indent=2))
-def lj(fp):
-    if not os.path.exists(fp): 
-        return {}
-    try:
-        return json.load(open(fp, encoding="utf-8"))
-    except json.JSONDecodeError:
-        # file vuoto o corrotto → ripartiamo puliti
-        return {}
+CATEGORY\_URLS = \[
+"[https://www.shop.ipzs.it/it/catalog/category/view/s/monete/id/3/?p=1](https://www.shop.ipzs.it/it/catalog/category/view/s/monete/id/3/?p=1)",
+"[https://www.shop.ipzs.it/it/catalog/category/view/s/monete/id/3/?p=2](https://www.shop.ipzs.it/it/catalog/category/view/s/monete/id/3/?p=2)",
+"[https://www.shop.ipzs.it/it/catalog/category/view/s/monete/id/3/?p=3](https://www.shop.ipzs.it/it/catalog/category/view/s/monete/id/3/?p=3)",
+"[https://www.shop.ipzs.it/it/catalog/category/view/s/monete/id/3/?p=4](https://www.shop.ipzs.it/it/catalog/category/view/s/monete/id/3/?p=4)",
+"[https://www.shop.ipzs.it/it/catalog/category/view/s/monete/id/3/?p=5](https://www.shop.ipzs.it/it/catalog/category/view/s/monete/id/3/?p=5)",
+]
+DOMAIN = "[www.shop.ipzs.it](http://www.shop.ipzs.it)"
 
-# ────────── Scraping categoria
-def get_links(cat):
-    soup=BeautifulSoup(requests.get(cat,timeout=10).content,"html.parser")
-    return [a["href"] for a in soup.select("a.product-item-link") if a.get("href")]
+# ──────────────── Telegram
 
-# ────────── Scraping prodotto
-def scrape(url):
-    soup=BeautifulSoup(requests.get(url,timeout=10).content,"html.parser")
-    info={"link":url}
-    info["nome"]=soup.select_one("h1.page-title span.base").get_text(strip=True)
-    pr=soup.select_one("span.price")
-    info["prezzo"]=pr.get_text(strip=True) if pr else "N/A"
-    stock=soup.select_one("div.stock")
-    if stock:
-        raw=stock.get_text(strip=True).upper()
-        info["disponibilita"]="NON DISPONIBILE" if "NON DISPONIBILE" in raw else "DISPONIBILE"
-    else: info["disponibilita"]="N/A"
-    attrs={}; 
-    for tr in soup.select("div.product-info-main table.data tr"):
-        th,td=tr.find("th"),tr.find("td")
-        if th and td: attrs[th.text.lower().strip()]=td.text.strip()
-    info["contingente"]=attrs.get("contingente") or attrs.get("tiratura") or attrs.get("numero pezzi","N/A")
-    info["data disponibilita"]=attrs.get("data disponibilità") or attrs.get("data disponibilita","N/A")
-    info["finitura"]=attrs.get("finitura","N/A")
-    info["metallo"]=attrs.get("metallo","N/A")
-    info["peso (gr)"]=attrs.get("peso (gr)","N/A")
-    info["in vendita da"]=attrs.get("in vendita da","N/A")
-    return info
+send = lambda msg: requests.post(
+f"[https://api.telegram.org/bot{os.getenv('TELEGRAM\_TOKEN')}/sendMessage](https://api.telegram.org/bot{os.getenv%28'TELEGRAM_TOKEN'%29}/sendMessage)",
+data={"chat\_id": os.getenv("CHAT\_ID"), "text": msg, "parse\_mode": "HTML"})
 
-# ────────── Parsing
-def tiratura(txt): 
-    nums=re.findall(r"\d+",txt.replace(".","").replace(" ","")); 
-    return int(nums[0]) if nums else None
-FORMATS=["%d %b %Y","%d %B %Y","%d/%m/%Y","%Y-%m-%d"]
-def pdate(t):
-    for f in FORMATS:
-        try: return datetime.strptime(t.strip().lower(),f)
-        except: pass
+# ──────────────── Helpers
 
-# ────────── Notifiche
-def alert_low(p):
-    msg=(f"<b>MONETA A BASSA TIRATURA!</b>\n"
-         f"- NOME MONETA: {p['nome']}\n"
-         f"- PREZZO: {p['prezzo']}\n"
-         f"- CONTINGENTE: {p['contingente']}\n"
-         f"- DISPONIBILITA: {p['disponibilita']}\n"
-         f"- IN VENDITA DA: {p['in vendita da']}\n"
-         f"- DATA DISPONIBILITA: {p['data disponibilita']}\n"
-         f"- FINITURA: {p['finitura']}\n"
-         f"- METALLO: {p['metallo']}\n"
-         f"- PESO (gr): {p['peso (gr)']}\n"
-         f"- LINK: {p['link']}")
-    send(msg)
+ld = lambda fp: set(open(fp,encoding="utf-8").read().splitlines()) if os.path.exists(fp) else set()
+sv = lambda fp,s: open(fp,"w",encoding="utf-8").write("\n".join(sorted(s)))
+lj = lambda fp: json.load(open(fp)) if os.path.exists(fp) else {}
+sj = lambda fp,d: open(fp,"w").write(json.dumps(d,indent=2))
 
-# ────────── Spider medio (slot 6-18)
-SPIDER_HOURS=(6,18)
-def spider(start,max_urls=100,max_depth=4):
-    from collections import deque
-    q=deque([(u,0) for u in start]); seen=set(); prods=[]
-    while q and len(seen)<max_urls:
-        url,d=q.popleft()
-        if url in seen or d>max_depth: continue
-        seen.add(url)
-        soup=BeautifulSoup(requests.get(url,timeout=10).content,"html.parser")
-        if soup.select_one("h1.page-title span.base"): prods.append(url); continue
-        for a in soup.find_all("a",href=True):
-            h=a["href"].split("#")[0]
-            if DOMAIN in h and not h.endswith((".jpg",".png",".pdf")):
-                q.append((h,d+1))
-    return prods
+# ──────────────── IPZS – parsing link
 
-def spider_ok():
-    now=datetime.now()
-    if now.hour not in SPIDER_HOURS: return False
-    lock=lj(SPIDER_LCK)
-    last=lock.get("ts")
-    if last and (now-datetime.fromisoformat(last)).seconds<3600: return False
-    sj(SPIDER_LCK,{"ts":now.isoformat()}); return True
+get\_links = lambda url: \[a\["href"] for a in BeautifulSoup(requests.get(url).content,"html.parser").select("a.product-item-link") if a.get("href")]
 
-# ────────── MAIN
+def scrape\_ipzs(url):
+try: soup = BeautifulSoup(requests.get(url).content,"html.parser")
+except: return None
+info = {"link": url}
+info\["nome"] = soup.select\_one("h1.page-title span.base").get\_text(strip=True)
+pr = soup.select\_one("span.price"); info\["prezzo"] = pr.get\_text(strip=True) if pr else "N/A"
+stock = soup.select\_one("div.stock"); txt = stock.get\_text(strip=True).upper() if stock else ""
+info\["disponibilita"] = "NON DISPONIBILE" if "NON DISPONIBILE" in txt else ("DISPONIBILE" if "DISPONIBILE" in txt else txt or "N/A")
+attr = {}
+for tr in soup.select("div.product-info-main table.data tr"):
+th, td = tr.find("th"), tr.find("td")
+if th and td: attr\[th.get\_text(strip=True).lower()] = td.get\_text(strip=True)
+info\["contingente"] = attr.get("contingente") or attr.get("tiratura") or attr.get("numero pezzi","N/A")
+info\["data disponibilita"] = attr.get("data disponibilità") or attr.get("data disponibilita","N/A")
+info\["finitura"] = attr.get("finitura","N/A")
+info\["metallo"] = attr.get("metallo","N/A")
+info\["peso (gr)"] = attr.get("peso (gr)","N/A")
+info\["in vendita da"] = attr.get("in vendita da","N/A")
+return info
+
+def parse\_tiratura(txt):
+nums = re.findall(r"\d+", txt.replace(".","").replace(" ",""))
+return int(nums\[0]) if nums else None
+
+def parse\_date(txt):
+for fmt in \["%d %b %Y","%d %B %Y","%d/%m/%Y","%Y-%m-%d"]:
+try: return datetime.strptime(txt.strip(), fmt)
+except: pass
+
+# ──────────────── Notifiche IPZS
+
+def notify\_new(prods,seen):
+for p in prods:
+if p\["link"] in seen: continue
+if send(f"<b>Nuova moneta</b>\n{p\['nome']}\n{p\['prezzo']}\n{p\['link']}").status\_code == 200:
+seen.add(p\["link"])
+return seen
+
+def notify\_low(prods,alerted):
+for p in prods:
+t=parse\_tiratura(p\["contingente"]); d=p\["disponibilita"]
+if t and t<=1500 and "NON DISPONIBILE" not in d and p\["link"] not in alerted:
+msg=(f"<b>Bassa tiratura disponibile</b>\n<b>Nome:</b> {p\['nome']}\n<b>Prezzo:</b> {p\['prezzo']}\n"
+f"<b>Contingente:</b> {p\['contingente']}\n<b>Disponibilità:</b> {p\['disponibilita']}\n"
+f"<b>In vendita da:</b> {p\['in vendita da']}\n<b>Data disponibilità:</b> {p\['data disponibilita']}\n"
+f"<b>Finitura:</b> {p\['finitura']}\n<b>Metallo:</b> {p\['metallo']}\n<b>Peso:</b> {p\['peso (gr)']}\n"
+f"<b>Link:</b> {p\['link']}")
+if send(msg).status\_code == 200: alerted.add(p\["link"])
+return alerted
+
+def notify\_dates(prods,alerts):
+bucket={}
+for p in prods:
+d=parse\_date(p\["data disponibilita"])
+if d: bucket.setdefault(d.date(),\[]).append(p)
+now=datetime.now(); tmr=(now+timedelta(days=1)).date()
+if tmr in bucket and len(bucket\[tmr])>=3 and now\.hour>=8:
+if alerts.get(str(tmr))!=str(now\.date()):
+msg=f"<b>{len(bucket\[tmr])} monete disponibili il {tmr}</b>\n"
+msg+="\n".join("- "+x\["nome"] for x in bucket\[tmr])
+if send(msg).status\_code==200: alerts\[str(tmr)]=str(now\.date())
+return alerts
+
+def sunday\_ping():
+n=datetime.now()
+if n.weekday()==6 and n.hour==11:
+send("🔁 Check domenicale: bot attivo.")
+
+# ──────────────── Spider lock
+
+SPIDER\_HOURS=(7,19)
+def spider\_allowed():
+now=datetime.now()
+if now\.hour not in SPIDER\_HOURS: return False
+lock=lj(SPIDER\_LOCK)
+last=lock.get("ts")
+if last and (now-datetime.fromisoformat(last)).seconds<3600: return False
+sj(SPIDER\_LOCK,{"ts"\:now\.isoformat()}); return True
+
+def spider(start,max\_urls=50,max\_depth=3):
+queue=\[(u,0) for u in start]; visited=set(); prods=\[]
+while queue and len(visited)\<max\_urls:
+url,d=queue.pop(0)
+if url in visited or d>max\_depth: continue
+visited.add(url)
+try: soup=BeautifulSoup(requests.get(url).content,"html.parser")
+except: continue
+if soup.select\_one("h1.page-title span.base"):
+prods.append(url); continue
+for a in soup.find\_all("a",href=True):
+h=a\["href"].split("#")\[0]
+if DOMAIN in h and not h.endswith(('.jpg','.png','.pdf')) and h not in visited:
+queue.append((h,d+1))
+return prods
+
+# ──────────────── MTM Monaco
+
+MTM\_ROOT="[https://www.mtm-monaco.mc/index.php?route=common/home](https://www.mtm-monaco.mc/index.php?route=common/home)"
+MTM\_DOMAIN="[www.mtm-monaco.mc](http://www.mtm-monaco.mc)"
+
+def check\_mtm\_monaco():
+seen=ld(MTM\_SEEN\_FILE); new\_seen=set()
+try: soup=BeautifulSoup(requests.get(MTM\_ROOT).content,"html.parser")
+except: return
+links=\[a\["href"] for a in soup.find\_all("a",href=True) if "product/category" in a\["href"]]
+for url in links:
+try: cat=BeautifulSoup(requests.get(url).content,"html.parser")
+except: continue
+for block in cat.select(".product-thumb"):
+a=block.find("a",href=True); name=block.find("h4")
+if not a or not name: continue
+link=a\["href"]; title=name.get\_text(strip=True)
+if link in seen: continue
+if "accessori" in title.lower(): continue
+price=block.select\_one(".price"); p=price.get\_text(strip=True) if price else "Prezzo N/D"
+msg=f"💎 <b>Moneta MTM disponibile</b>\n{title}\n{p}\n{link}"
+if send(msg).status\_code==200: new\_seen.add(link)
+\# Salva solo quelli visti ora (lock antiflood 1h)
+if new\_seen:
+now=datetime.now()
+new\_seen={f"{now\.isoformat()}|{url}" for url in new\_seen}
+old\_seen={x for x in seen if (now-datetime.fromisoformat(x.split("|")\[0])).seconds<3600}
+sv(MTM\_SEEN\_FILE,old\_seen|new\_seen)
+
+# ──────────────── MAIN
+
 def main():
-    seen=ld(SEEN_FILE); alerted=ld(LOW_FILE); dates=lj(DATE_FILE)
+print("Start",datetime.now())
+seen=ld(SEEN\_FILE); alerted=ld(LOW\_FILE); dates=lj(DATE\_FILE)
+links=set()
+for u in CATEGORY\_URLS:
+links.update(get\_links(u))
+if spider\_allowed():
+links.update(spider(CATEGORY\_URLS,50,3))
+prods=\[]
+for l in links:
+p=scrape\_ipzs(l)
+if p: prods.append(p)
+time.sleep(0.15)
+seen=notify\_new(prods,seen)
+alerted=notify\_low(prods,alerted)
+dates=notify\_dates(prods,dates)
+sunday\_ping()
+sv(SEEN\_FILE,seen); sv(LOW\_FILE,alerted); sj(DATE\_FILE,dates)
+check\_mtm\_monaco()
+print("End",datetime.now())
 
-    links=set()
-    for u in CATEGORY_URLS: links.update(get_links(u))
-    if spider_ok(): links.update(spider(CATEGORY_URLS))
-
-    prods=[]; 
-    for l in links:
-        p=scrape(l); 
-        if p: prods.append(p)
-        time.sleep(0.15)
-
-    # Nuove monete
-    for p in prods:
-        if p["link"] not in seen:
-            send(f"<b>Nuova moneta</b>\n{p['nome']}\n{p['prezzo']}\n{p['link']}")
-            seen.add(p["link"])
-
-    # Bassa tiratura
-    for p in prods:
-        t=tiratura(p["contingente"])
-        if t and t<=1500 and "NON DISPONIBILE" not in p["disponibilita"] and p["link"] not in alerted:
-            alert_low(p); alerted.add(p["link"])
-
-    # Data disponibilità (giorno-prima)
-    bucket={}
-    for p in prods:
-        d=pdate(p["data disponibilita"])
-        if d: bucket.setdefault(d.date(),[]).append(p)
-    now=datetime.now(); tomorrow=(now+timedelta(days=1)).date()
-    if tomorrow in bucket and len(bucket[tomorrow])>=3 and now.hour>=6:
-        if dates.get(str(tomorrow))!=str(now.date()):
-            msg=f"<b>{len(bucket[tomorrow])} monete disponibili il {tomorrow}</b>\n"
-            msg+="\n".join("- "+x["nome"] for x in bucket[tomorrow])
-            send(msg); dates[str(tomorrow)]=str(now.date())
-
-    # ping domenicale
-    if now.weekday()==6 and now.hour==11:
-        send("🔁 Bot IPZS attivo (controllo domenicale)")
-
-    sv(SEEN_FILE,seen); sv(LOW_FILE,alerted); sj(DATE_FILE,dates)
-
-if __name__=="__main__":
-    print("Start",datetime.now()); main(); print("End",datetime.now())
+if **name**=="**main**":
+main()
