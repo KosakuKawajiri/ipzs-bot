@@ -222,7 +222,7 @@ def spider(start, max_urls=50, max_depth=3):
 # ──────────────── MTM Monaco
 MTM_ROOT      = "https://www.mtm-monaco.mc/index.php?route=common/home"
 MTM_DOMAIN    = "www.mtm-monaco.mc"
-MTM_SEEN_FILE = MTM_SEEN_FILE  # "seen_mtm.txt"
+MTM_SEEN_FILE = "seen_mtm.txt"
 
 def check_mtm_monaco():
     """
