@@ -2,7 +2,7 @@ import requests, re, os, json, time
 from bs4 import BeautifulSoup
 from datetime import datetime, timedelta
 
-──────────────── File di stato
+# ──────────────── File di stato
 
 SEEN_FILE       = "seen.txt"
 LOW_FILE        = "low_mintage_alerts.txt"
@@ -10,7 +10,7 @@ DATE_FILE       = "date_alerts.json"
 SPIDER_LOCK     = "last_spider.json"
 MTM_SEEN_FILE   = "seen_mtm.txt"
 
-──────────────── IPZS Config
+# ──────────────── IPZS Config
 
 CATEGORY_URLS = [
 "https://www.shop.ipzs.it/it/catalog/category/view/s/monete/id/3/?p=1",
@@ -21,20 +21,20 @@ CATEGORY_URLS = [
 ]
 DOMAIN = "www.shop.ipzs.it"
 
-──────────────── Telegram
+# ──────────────── Telegram
 
 send = lambda msg: requests.post(
 f"https://api.telegram.org/bot{os.getenv('TELEGRAM_TOKEN')}/sendMessage",
 data={"chat_id": os.getenv("CHAT_ID"), "text": msg, "parse_mode": "HTML"})
 
-──────────────── Helpers
+# ──────────────── Helpers
 
 ld = lambda fp: set(open(fp,encoding="utf-8").read().splitlines()) if os.path.exists(fp) else set()
 sv = lambda fp,s: open(fp,"w",encoding="utf-8").write("\n".join(sorted(s)))
 lj = lambda fp: json.load(open(fp)) if os.path.exists(fp) else {}
 sj = lambda fp,d: open(fp,"w").write(json.dumps(d,indent=2))
 
-──────────────── IPZS – parsing link
+# ──────────────── IPZS – parsing link
 
 get_links = lambda url: [a["href"] for a in BeautifulSoup(requests.get(url).content,"html.parser").select("a.product-item-link") if a.get("href")]
 
@@ -67,7 +67,7 @@ for fmt in ["%d %b %Y","%d %B %Y","%d/%m/%Y","%Y-%m-%d"]:
 try: return datetime.strptime(txt.strip(), fmt)
 except: pass
 
-──────────────── Notifiche IPZS
+# ──────────────── Notifiche IPZS
 
 def notify_new(prods,seen):
 for p in prods:
@@ -103,10 +103,10 @@ return alerts
 
 def sunday_ping():
 n=datetime.now()
-if n.weekday()==6 and n.hour==11:
+if n.weekday()==6 and n.hour==11: # ────────────────────────────── Alle 12.00/13.00 di domenica
 send("🔁 Check domenicale: bot attivo.")
 
-──────────────── Spider lock
+# ──────────────── Spider lock
 
 SPIDER_HOURS=(7,19)
 def spider_allowed():
@@ -133,7 +133,7 @@ if DOMAIN in h and not h.endswith(('.jpg','.png','.pdf')) and h not in visited:
 queue.append((h,d+1))
 return prods
 
-──────────────── MTM Monaco
+# ──────────────── MTM Monaco
 
 MTM_ROOT="https://www.mtm-monaco.mc/index.php?route=common/home"
 MTM_DOMAIN="www.mtm-monaco.mc"
@@ -162,7 +162,7 @@ new_seen={f"{now.isoformat()}|{url}" for url in new_seen}
 old_seen={x for x in seen if (now-datetime.fromisoformat(x.split("|")[0])).seconds<3600}
 sv(MTM_SEEN_FILE,old_seen|new_seen)
 
-──────────────── MAIN
+# ──────────────── MAIN
 
 def main():
 print("Start",datetime.now())
