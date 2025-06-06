@@ -103,7 +103,7 @@ return alerts
 
 def sunday_ping():
 n=datetime.now()
-if n.weekday()==6 and n.hour==13:
+if n.weekday()==6 and n.hour==11:
 send("🔁 Ping domenicale: bot attivo.")
 
 # ──────────────── Spider lock
