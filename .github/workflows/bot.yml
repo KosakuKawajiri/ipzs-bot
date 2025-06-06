@@ -39,6 +39,8 @@ jobs:
         env:
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           CHAT_ID:        ${{ secrets.CHAT_ID }}
+          MTM_USERNAME:   ${{ secrets.MTM_USERNAME }}
+          MTM_PASSWORD:   ${{ secrets.MTM_PASSWORD }}
 
       - name: 💾 Commit file di stato aggiornati
         run: |
