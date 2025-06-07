@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 
 # ──────────────── CONFIG DI TEST (solo per sviluppo)
 TEST_MTM_LINKS = [
-    "https://www.mtm-monaco.mc/index.php?route=product/product&path=74&product_id=110&utm_test=1"
+    "https://www.mtm-monaco.mc/index.php?route=product/product&path=74&product_id=110"
 ]
 
 # ──────────────── File di stato
