@@ -89,21 +89,19 @@ def add_to_cart_and_checkout(driver, product_url):
     driver.get(product_url)
     time.sleep(2)  # attendi caricamento completo
 
-    # 1️⃣ Trova e clicca il bottone “Add to Cart” tramite il suo valore
+    # 1️⃣ Trova e clicca il bottone via ID
     try:
-        add_btn = driver.find_element(
-            By.XPATH, "//input[@type='submit' and @value='Add to Cart']"
-        )
+        add_btn = driver.find_element(By.ID, "button-cart")
         add_btn.click()
         print("✅ Click sul pulsante Aggiungi al carrello eseguito.")
     except Exception as e:
         print(f"❌ Errore clic Aggiungi al carrello su {product_url}: {e}")
         return False
 
-    # 2️⃣ Attendi un paio di secondi per sicurezza
+    # 2️⃣ Lascia un paio di secondi per eseguire eventuale JS interno
     time.sleep(2)
 
-    # 3️⃣ Naviga direttamente al carrello
+    # 3️⃣ Naviga al carrello
     try:
         driver.get("https://www.mtm-monaco.mc/index.php?route=checkout/cart")
         print("✅ Navigato al carrello.")
