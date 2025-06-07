@@ -71,13 +71,16 @@ def login_mtm(driver):
     print("🖥️ Page source after login (first 500 chars):")
     print(src[:500].replace("\n", " "))
 
-    # verifica presenza logout o dashboard
-    if "/index.php?route=account/logout" in src.lower() or "account/dashboard" in src.lower():
+    # verifica riuscita del login controllando il titolo della pagina
+    title = driver.title.lower()
+    print(f"🏷️ Titolo pagina dopo login: {driver.title!r}")
+    if "votre compte" in title or "mon compte" in title or "logout" in src.lower():
         print("✅ Login MTM riuscito.")
         return True
     else:
         print("❌ Login MTM fallito.")
         return False
+
 
 def add_to_cart_and_checkout(driver, product_url):
     """
