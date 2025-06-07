@@ -4,7 +4,7 @@ from bs4 import BeautifulSoup
 from datetime import datetime, timedelta
 
 TEST_MTM_LINKS = [
-    "https://www.mtm-monaco.mc/index.php?route=product/product&path=74&product_id=110"  #-----------------------------------TEST_LINK
+    "https://www.mtm-monaco.mc/index.php?route=product/product&path=74&product_id=110&utm_test=1"  #-----------------------------------TEST_LINK
 ]
 
 # ──────────────── File di stato
