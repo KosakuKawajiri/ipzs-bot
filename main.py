@@ -3,11 +3,6 @@ import requests, re, os, json, time
 from bs4 import BeautifulSoup
 from datetime import datetime, timedelta
 
-# ──────────────── CONFIG DI TEST (solo per sviluppo)
-TEST_MTM_LINKS = [
-    "https://www.mtm-monaco.mc/index.php?route=product/product&path=74&product_id=110"
-]
-
 # ──────────────── File di stato
 SEEN_FILE       = "seen.txt"
 LOW_FILE        = "low_mintage_alerts.txt"
@@ -188,17 +183,6 @@ def check_mtm_monaco():
     print(f"🧾 Link già visti: {len(seen)}")
 
     new_products = []
-    for link in TEST_MTM_LINKS:
-        title = "Prodotto DI TEST MTM"
-        price = "Prezzo N/D"
-        if link not in seen:
-            new_products.append((title, price, link))
-            seen.add(link)
-
-    print(f"🔍 Nuovi prodotti trovati: {len(new_products)}")
-    if not new_products:
-        print("❌ Nessun nuovo prodotto, esco.")
-        return
 
     driver = setup_driver_headless()
     logged = login_mtm(driver)
@@ -218,11 +202,11 @@ def check_mtm_monaco():
 
     if added_titles:
         cart_url = "https://www.mtm-monaco.mc/index.php?route=checkout/cart"
-        msg = "<b>Flash-Compra MTM Monaco</b>\n"
+        msg = "<b>Flash monete Monaco!</b>\n"
         msg += "Sono state aggiunte al carrello:\n"
         for t in added_titles:
             msg += f"- {t}\n"
-        msg += f"\n➡️ <a href=\"{cart_url}\">Vai al carrello</a>"
+        msg += f"\n➡️ <a href=\"{cart_url}\">Vai subito al carrello</a>"
         send(msg)
 
     driver.quit()
