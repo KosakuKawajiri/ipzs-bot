@@ -235,17 +235,7 @@ TEST_MTM_LINKS = [
 ]
 
 def check_mtm_monaco():
-    """
-    Trova nuove monete MTM e, se ne esistono, apre un driver headless,
-    esegue il login e aggiunge tutte le nuove monete al carrello in una sola sessione.
-    Alla fine invia un singolo messaggio Telegram con la lista delle monete
-    aggiunte e il link al carrello.
-
-    - Se TEST_MTM_LINKS contiene URL, vengono considerati per primi come 'nuovi'.
-    - Se TEST_MTM_LINKS è vuoto, scorre le categorie 'product/category' sulla homepage.
-    """
-
-    # 0️⃣ Carica le righe di seen_mtm.txt (contengono solo l'URL)
+    print("ℹ️ Avvio controllo MTM Monaco")
     seen = set()
     if os.path.exists(MTM_SEEN_FILE):
         with open(MTM_SEEN_FILE, "r", encoding="utf-8") as f:
@@ -253,109 +243,40 @@ def check_mtm_monaco():
                 url = line.strip()
                 if url:
                     seen.add(url)
+    print(f"🧾 Link già visti (seen_mtm.txt): {len(seen)}")
 
-    new_products = []  # lista di tuple (title, price, link)
+    new_products = []
+    for link in TEST_MTM_LINKS:
+        title = "Prodotto DI TEST MTM"
+        price = "Prezzo-N/D"
+        if link not in seen:
+            new_products.append((title, price, link))
+            seen.add(link)
 
-    # 1️⃣ Blocchetto di TEST: se TEST_MTM_LINKS non è vuoto, usa solo quelli
-    if TEST_MTM_LINKS:
-        for link in TEST_MTM_LINKS:
-            title = "Prodotto DI TEST MTM"
-            price = "Prezzo-N/D"
-            if link not in seen:
-                new_products.append((title, price, link))
-                seen.add(link)
-    # ❗ Debug: mostra in log cosa c’è in new_products
-            print(f"# DEBUG: new_products = {new_products}") #-----------------------------------DEBUG
-    
-    else:
-        # 2️⃣ Se TEST_MTM_LINKS è vuoto, procedi con scraping “reale”
-        try:
-            homepage = BeautifulSoup(
-                requests.get(MTM_ROOT, timeout=10).content,
-                "html.parser"
-            )
-        except:
-            return
-
-        # 3️⃣ Trova tutti i link di categoria (product/category) nella homepage
-        cat_links = [
-            a["href"]
-            for a in homepage.find_all("a", href=True)
-            if "product/category" in a["href"]
-        ]
-
-        # 4️⃣ Per ogni categoria, estrai i blocchi .product-thumb
-        for cat_url in cat_links:
-            try:
-                cat_page = BeautifulSoup(
-                    requests.get(cat_url, timeout=10).content,
-                    "html.parser"
-                )
-            except:
-                continue
-
-            for block in cat_page.select(".product-thumb"):
-                a_tag   = block.find("a", href=True)
-                name_tag = block.find("h4")
-                if not a_tag or not name_tag:
-                    continue
-
-                link  = a_tag["href"]
-                title = name_tag.get_text(strip=True)
-
-                # Filtra prodotti non-numismatici (es. accessori)
-                if "accessori" in title.lower():
-                    continue
-
-                if link in seen:
-                    continue  # già notificato in precedenza
-
-                # Estrai prezzo
-                price_tag = block.select_one(".price")
-                price = price_tag.get_text(strip=True) if price_tag else "Prezzo N/D"
-
-                new_products.append((title, price, link))
-                seen.add(link)
-
-    # 5️⃣ Se non ci sono nuovi prodotti, aggiorno seen_mtm.txt e esco
+    print(f"🔍 Nuovi prodotti trovati: {len(new_products)}")
     if not new_products:
-        with open(MTM_SEEN_FILE, "w", encoding="utf-8") as f:
-            for url in seen:
-                f.write(url + "\n")
+        print("❌ Nessun nuovo prodotto MTM, esco.")
         return
+    print("✅ Nuovi prodotti pronti per login Selenium")
 
-    # 6️⃣ Preparo il driver headless e faccio il login
     driver = setup_driver_headless()
     logged = login_mtm(driver)
+    print(f"🔐 Login riuscito: {logged}")
     if not logged:
         driver.quit()
-        return  # non riesco a fare login, skip
+        return
 
-    # 7️⃣ Aggiungo ogni nuovo prodotto al carrello
     added_titles = []
     for title, price, link in new_products:
+        print(f"🛒 Aggiungo al carrello: {title}")
         ok = add_to_cart_and_checkout(driver, link)
+        print(f"👉 Risultato: {'OK' if ok else 'Fallito'}")
         if ok:
             added_titles.append(title)
-        time.sleep(1)  # piccolo delay
+        time.sleep(1)
 
-    # 8️⃣ Invio un unico messaggio con l’elenco dei prodotti aggiunti e link al carrello
-    if added_titles:
-        cart_url = "https://www.mtm-monaco.mc/index.php?route=checkout/cart"
-        msg = "<b>Flash-Compra MTM Monaco</b>\n"
-        msg += "Sono state aggiunte le seguenti monete nel carrello:\n"
-        for t in added_titles:
-            msg += f"- {t}\n"
-        msg += f"\n➡️ <a href=\"{cart_url}\">Vai al carrello</a>"
-        send(msg)
-
-    # 9️⃣ Chiudo il driver
+    print(f"📦 Totale prodotti aggiunti al carrello: {len(added_titles)}")
     driver.quit()
-
-    # 🔟 Salvo il nuovo seen_mtm.txt (solo gli URL)
-    with open(MTM_SEEN_FILE, "w", encoding="utf-8") as f:
-        for url in seen:
-            f.write(url + "\n")
 
 
 # ──────────────── MAIN
