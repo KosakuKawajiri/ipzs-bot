@@ -81,34 +81,49 @@ def login_mtm(driver):
         print("❌ Login MTM fallito.")
         return False
 
-
 def add_to_cart_and_checkout(driver, product_url):
     """
-    Visita direttamente la scheda prodotto MTM e aggiunge al carrello.
-    Alla fine naviga alla pagina di checkout/cart.
+    Visita la pagina prodotto MTM e aggiunge al carrello.
+    Poi naviga alla pagina di checkout/cart.
     """
-    # 1️⃣ Visita la pagina prodotto
     driver.get(product_url)
-    time.sleep(1)  # attendi caricamento
+    time.sleep(2)  # attendi caricamento completo
 
-    # 2️⃣ Trova e clicca il pulsante “Aggiungi al carrello”
+    # 1️⃣ Trova e clicca il pulsante “Aggiungi al carrello” con ID
     try:
-        # In OpenCart standard, l’input con id="button-cart" fa l’add-to-cart
         add_btn = driver.find_element(By.ID, "button-cart")
         add_btn.click()
-    except:
-        print(f"❌ Non ho trovato il pulsante Aggiungi al carrello su {product_url}")
+        print("✅ Click sul pulsante Aggiungi al carrello eseguito.")
+    except Exception as e:
+        print(f"❌ Errore clic Aggiungi al carrello su {product_url}: {e}")
         return False
 
-    # 3️⃣ Attendi conferma (es. messaggio toast) e vai al carrello
-    time.sleep(1)
+    # 2️⃣ Attendi il messaggio di conferma nel carrello (toast o badge)
+    #    Qui aspettiamo che il carrello in alto mostri un numero > 0
+    #    (se l'icona ha selettore span#cart-total o simile)
+    try:
+        # adatta il selettore se necessario; esempio generico:
+        from selenium.webdriver.common.by import By as _By
+        from selenium.webdriver.support.ui import WebDriverWait
+        from selenium.webdriver.support import expected_conditions as EC
+
+        WebDriverWait(driver, 5).until(
+            EC.text_to_be_present_in_element(
+                (_By.CSS_SELECTOR, "a#cart > span.badge"), "1"
+            )
+        )
+        print("✅ Conferma visiva: carrello aggiornato.")
+    except Exception:
+        print("⚠️ Conferma carrello non rilevata, procedo comunque.")
+
+    # 3️⃣ Naviga alla pagina del carrello
     try:
         driver.get("https://www.mtm-monaco.mc/index.php?route=checkout/cart")
-    except:
-        print("⚠️ Impossibile navigare alla pagina carrello.")
+        print("✅ Navigato al carrello.")
+    except Exception as e:
+        print("⚠️ Impossibile navigare alla pagina carrello:", e)
         return False
 
-    print(f"✅ Prodotto {product_url} aggiunto al carrello, ora in checkout.")
     return True
 
 def flash_purchase_mtm(product_url):
