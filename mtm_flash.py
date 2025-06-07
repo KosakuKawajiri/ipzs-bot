@@ -89,34 +89,21 @@ def add_to_cart_and_checkout(driver, product_url):
     driver.get(product_url)
     time.sleep(2)  # attendi caricamento completo
 
-    # 1️⃣ Trova e clicca il pulsante “Aggiungi al carrello” con ID
+    # 1️⃣ Trova e clicca il bottone “Add to Cart” tramite il suo valore
     try:
-        add_btn = driver.find_element(By.ID, "button-cart")
+        add_btn = driver.find_element(
+            By.XPATH, "//input[@type='submit' and @value='Add to Cart']"
+        )
         add_btn.click()
         print("✅ Click sul pulsante Aggiungi al carrello eseguito.")
     except Exception as e:
         print(f"❌ Errore clic Aggiungi al carrello su {product_url}: {e}")
         return False
 
-    # 2️⃣ Attendi il messaggio di conferma nel carrello (toast o badge)
-    #    Qui aspettiamo che il carrello in alto mostri un numero > 0
-    #    (se l'icona ha selettore span#cart-total o simile)
-    try:
-        # adatta il selettore se necessario; esempio generico:
-        from selenium.webdriver.common.by import By as _By
-        from selenium.webdriver.support.ui import WebDriverWait
-        from selenium.webdriver.support import expected_conditions as EC
+    # 2️⃣ Attendi un paio di secondi per sicurezza
+    time.sleep(2)
 
-        WebDriverWait(driver, 5).until(
-            EC.text_to_be_present_in_element(
-                (_By.CSS_SELECTOR, "a#cart > span.badge"), "1"
-            )
-        )
-        print("✅ Conferma visiva: carrello aggiornato.")
-    except Exception:
-        print("⚠️ Conferma carrello non rilevata, procedo comunque.")
-
-    # 3️⃣ Naviga alla pagina del carrello
+    # 3️⃣ Naviga direttamente al carrello
     try:
         driver.get("https://www.mtm-monaco.mc/index.php?route=checkout/cart")
         print("✅ Navigato al carrello.")
