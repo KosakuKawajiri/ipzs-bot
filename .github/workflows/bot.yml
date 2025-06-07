@@ -28,6 +28,11 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
+      
+      - name: 📥 Installa Chrome e Chromedriver di sistema
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y chromium-browser chromium-chromedriver
 
       - name: 🚀 Avvia lo script main.py
         run: python main.py
