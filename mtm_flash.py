@@ -23,8 +23,8 @@ def setup_driver_headless():
     chrome_options.add_argument("--window-size=1920,1080")
 
     driver = webdriver.Chrome(
-        ChromeDriverManager(version="137.0.7151.68").install(),
-        options=chrome_options
+    ChromeDriverManager().install(),
+    options=chrome_options
     )
     return driver
 
