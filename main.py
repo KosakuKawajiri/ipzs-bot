@@ -4,7 +4,7 @@ from bs4 import BeautifulSoup
 from datetime import datetime, timedelta
 
 TEST_MTM_LINKS = [
-    "https://www.mtm-monaco.mc/index.php?route=product/product&path=74&product_id=110"
+    "https://www.mtm-monaco.mc/index.php?route=product/product&path=74&product_id=110"  #-----------------------------------TEST_LINK
 ]
 
 # ──────────────── File di stato
@@ -264,6 +264,8 @@ def check_mtm_monaco():
             if link not in seen:
                 new_products.append((title, price, link))
                 seen.add(link)
+    print(f"# DEBUG: new_products = {new_products}") #-----------------------------------DEBUG
+    
     else:
         # 2️⃣ Se TEST_MTM_LINKS è vuoto, procedi con scraping “reale”
         try:
