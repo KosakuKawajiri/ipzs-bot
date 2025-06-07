@@ -264,7 +264,8 @@ def check_mtm_monaco():
             if link not in seen:
                 new_products.append((title, price, link))
                 seen.add(link)
-    print(f"# DEBUG: new_products = {new_products}") #-----------------------------------DEBUG
+    # ❗ Debug: mostra in log cosa c’è in new_products
+            print(f"# DEBUG: new_products = {new_products}") #-----------------------------------DEBUG
     
     else:
         # 2️⃣ Se TEST_MTM_LINKS è vuoto, procedi con scraping “reale”
