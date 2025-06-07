@@ -65,12 +65,6 @@ def login_mtm(driver):
 
     time.sleep(2)
 
-    # --- DEBUG: salva screenshot e stampa parti di page_source ---
-    driver.save_screenshot("debug_login.png")
-    src = driver.page_source
-    print("🖥️ Page source after login (first 500 chars):")
-    print(src[:500].replace("\n", " "))
-
     # verifica riuscita del login controllando il titolo della pagina
     title = driver.title.lower()
     print(f"🏷️ Titolo pagina dopo login: {driver.title!r}")
