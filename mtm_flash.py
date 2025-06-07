@@ -40,18 +40,15 @@ def login_mtm(driver):
         print("❌ MTM_USERNAME o MTM_PASSWORD non configurati.")
         return False
 
-    # URL di login MTM (OpenCart standard)
     login_url = "https://www.mtm-monaco.mc/index.php?route=account/login"
-
     driver.get(login_url)
-    time.sleep(1)  # attendi il caricamento del form
+    time.sleep(1)
 
-    # Trova il form di login: campo email, campo password, pulsante
     try:
         email_input = driver.find_element(By.NAME, "email")
         pass_input  = driver.find_element(By.NAME, "password")
-    except:
-        print("❌ Non ho trovato i campi di login su MTM.")
+    except Exception as e:
+        print("❌ Non ho trovato i campi di login:", e)
         return False
 
     email_input.clear()
@@ -59,20 +56,23 @@ def login_mtm(driver):
     pass_input.clear()
     pass_input.send_keys(password)
 
-    # Trova e clicca il pulsante “Login”
     try:
-        # In OpenCart, spesso il pulsante ha id="button-login" o name="login"
         btn = driver.find_element(By.CSS_SELECTOR, "input[type='submit']")
         btn.click()
-    except:
-        print("❌ Non ho trovato il pulsante di login.")
+    except Exception as e:
+        print("❌ Non ho trovato il pulsante di login:", e)
         return False
 
-    time.sleep(2)  # attendi redirect
+    time.sleep(2)
 
-    # Verifica che la pagina contenga un link “logout” o la dashboard
-    page_source = driver.page_source.lower()
-    if "/index.php?route=account/logout" in page_source or "account/dashboard" in page_source:
+    # --- DEBUG: salva screenshot e stampa parti di page_source ---
+    driver.save_screenshot("debug_login.png")
+    src = driver.page_source
+    print("🖥️ Page source after login (first 500 chars):")
+    print(src[:500].replace("\n", " "))
+
+    # verifica presenza logout o dashboard
+    if "/index.php?route=account/logout" in src.lower() or "account/dashboard" in src.lower():
         print("✅ Login MTM riuscito.")
         return True
     else:
