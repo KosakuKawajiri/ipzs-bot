@@ -3,6 +3,12 @@ import requests, re, os, json, time
 from bs4 import BeautifulSoup
 from datetime import datetime, timedelta
 
+# ──────────────── MTM Credentials
+MTM_ACCOUNTS = [
+    {"user": os.getenv("MTM_USERNAME"),              "pwd": os.getenv("MTM_PASSWORD")},
+    {"user": os.getenv("MTM_USERNAME_ALTERN"),       "pwd": os.getenv("MTM_PASSWORD")},
+]
+
 # ──────────────── File di stato
 SEEN_FILE       = "seen.txt"
 LOW_FILE        = "low_mintage_alerts.txt"
@@ -179,37 +185,53 @@ def check_mtm_monaco():
     seen = set()
     if os.path.exists(MTM_SEEN_FILE):
         with open(MTM_SEEN_FILE, "r", encoding="utf-8") as f:
-            seen = set(line.strip() for line in f if line.strip())
+            seen = {line.strip() for line in f if line.strip()}
     print(f"🧾 Link già visti: {len(seen)}")
 
-    new_products = []
+    # --- qui costruisci new_products con il tuo scraping MTM ---
+    new_products = [...]  
 
-    driver = setup_driver_headless()
-    logged = login_mtm(driver)
-    print(f"🔐 Login riuscito: {logged}")
-    if not logged:
-        driver.quit()
+    if not new_products:
+        print("❌ Nessun nuovo prodotto, esco.")
         return
 
-    added_titles = []
-    for title, price, link in new_products:
-        print(f"🛒 Aggiungo al carrello: {title}")
-        ok = add_to_cart_and_checkout(driver, link)
-        print(f"👉 Risultato: {'OK' if ok else 'Fallito'}")
-        if ok:
-            added_titles.append(title)
-        time.sleep(1)
+    added_titles = []              # <<< inizializza QUI
+	
+	# ➡️ Ora cicliamo su ciascun account MTM
+    for acct in MTM_ACCOUNTS:
+        user, pwd = acct["user"], acct["pwd"]
+        if not user or not pwd:
+            print(f"⚠️ Credenziali MTM mancanti per account {user!r}, salto.")
+            continue
 
+        print(f"🔐 Login MTM con account {user}")
+        driver = setup_driver_headless()
+        logged = login_mtm(driver, username=user, password=pwd)
+        print(f"🔐 Login riuscito: {logged}")
+        if not logged:
+            driver.quit()
+            continue
+
+        for title, price, link in new_products:
+            print(f"🛒 [{user}] aggiungo al carrello: {title}")
+            ok = add_to_cart_and_checkout(driver, link)
+            print(f"👉 [{user}] Risultato: {'OK' if ok else 'Fallito'}")
+            if ok:
+                added_titles.append(title)
+            time.sleep(1)
+
+        driver.quit()  # chiudi il driver per questo account
+
+    # una sola notifica, con tutte le monete aggiunte da entrambi gli account
     if added_titles:
         cart_url = "https://www.mtm-monaco.mc/index.php?route=checkout/cart"
-        msg = "<b>Flash monete Monaco!</b>\n"
-        msg += "Sono state aggiunte al carrello:\n"
+        msg = "<b>Flash monete Monaco!</b>\nSono state aggiunte al carrello:\n"
         for t in added_titles:
             msg += f"- {t}\n"
         msg += f"\n➡️ <a href=\"{cart_url}\">Vai subito al carrello</a>"
         send(msg)
 
-    driver.quit()
+    # infine aggiorna il file seen_mtm.txt
     with open(MTM_SEEN_FILE, "w", encoding="utf-8") as f:
         for url in seen:
             f.write(url + "\n")
