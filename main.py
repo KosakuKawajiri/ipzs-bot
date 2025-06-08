@@ -188,8 +188,34 @@ def check_mtm_monaco():
             seen = {line.strip() for line in f if line.strip()}
     print(f"🧾 Link già visti: {len(seen)}")
 
-    # --- qui costruisci new_products con il tuo scraping MTM ---
-    new_products = [...]  
+# --- costruisco la lista vera di nuovi prodotti MTM Monaco ---
+     new_products = []
+     # 1. prendo la homepage e tutte le categorie product/category
+     homepage = BeautifulSoup(requests.get(MTM_ROOT, timeout=10).content, "html.parser")
+     cat_links = [
+         a["href"] for a in homepage.find_all("a", href=True)
+         if "product/category" in a["href"]
+     ]
+
+     # 2. passo ciascuna categoria e prendo tutti i blocchi .product-thumb
+     for cat_url in cat_links:
+         try:
+             cat_page = BeautifulSoup(requests.get(cat_url, timeout=10).content, "html.parser")
+         except:
+             continue
+         for block in cat_page.select(".product-thumb"):
+             a_tag = block.find("a", href=True)
+             title_tag = block.select_one("h4")
+             price_tag = block.select_one(".price")
+             if not a_tag or not title_tag:
+                 continue
+             link  = a_tag["href"]
+             title = title_tag.get_text(strip=True)
+             price = price_tag.get_text(strip=True) if price_tag else "N/D"
+             if link in seen:
+                 continue
+             new_products.append((title, price, link))
+             seen.add(link)
 
     if not new_products:
         print("❌ Nessun nuovo prodotto, esco.")
