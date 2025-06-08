@@ -1,13 +1,14 @@
 from mtm_flash import setup_driver_headless, login_mtm, add_to_cart_and_checkout
+from ipzs_flash import login_ipzs, add_to_cart_ipzs
+
 import requests, re, os, json, time
 from bs4 import BeautifulSoup
 from datetime import datetime, timedelta
-from mtm_flash import setup_driver_headless, login_mtm, add_to_cart_and_checkout
 
 # ──────────────── MTM Credentials
 MTM_ACCOUNTS = [
-    {"user": os.getenv("MTM_USERNAME"),              "pwd": os.getenv("MTM_PASSWORD")},
-    {"user": os.getenv("MTM_USERNAME_ALTERN"),       "pwd": os.getenv("MTM_PASSWORD")},
+    {"user": os.getenv("MTM_USERNAME"),        "pwd": os.getenv("MTM_PASSWORD")},
+    {"user": os.getenv("MTM_USERNAME_ALTERN"), "pwd": os.getenv("MTM_PASSWORD")},
 ]
 
 # ──────────────── File di stato
@@ -17,23 +18,19 @@ DATE_FILE       = "date_alerts.json"
 SPIDER_LOCK     = "last_spider.json"
 MTM_SEEN_FILE   = "seen_mtm.txt"
 
-# ──────────────── Limiti tirature IPZS per logiche su alert e carrello 
-IPZS_LOW_HIGH = 1500   # già gestiti
-IPZS_FLASH    = 500    # soglia per flash‐cart
+# ──────────────── Soglie tirature IPZS
+IPZS_LOW_HIGH = 1500  # alert standard
+IPZS_FLASH    = 500   # flash-cart
 
 # ──────────────── IPZS Config
 CATEGORY_URLS = [
-    "https://www.shop.ipzs.it/it/catalog/category/view/s/monete/id/3/?p=1",
-    "https://www.shop.ipzs.it/it/catalog/category/view/s/monete/id/3/?p=2",
-    "https://www.shop.ipzs.it/it/catalog/category/view/s/monete/id/3/?p=3",
-    "https://www.shop.ipzs.it/it/catalog/category/view/s/monete/id/3/?p=4",
-    "https://www.shop.ipzs.it/it/catalog/category/view/s/monete/id/3/?p=5",
+    f"https://www.shop.ipzs.it/it/catalog/category/view/s/monete/id/3/?p={i}"
+    for i in range(1, 6)
 ]
 DOMAIN = "www.shop.ipzs.it"
 
 # ──────────────── MTM Monaco Config
-MTM_ROOT     = "https://www.mtm-monaco.mc/index.php?route=common/home"
-MTM_DOMAIN   = "www.mtm-monaco.mc"
+MTM_ROOT   = "https://www.mtm-monaco.mc/index.php?route=common/home"
 
 # ──────────────── Telegram helper
 def send(text: str) -> bool:
@@ -52,13 +49,13 @@ def send(text: str) -> bool:
     except:
         return False
 
-# ──────────────── Helpers file
+# ──────────────── File helpers
 def ld(fp): return set(open(fp, encoding="utf-8").read().splitlines()) if os.path.exists(fp) else set()
-def sv(fp, s): open(fp, "w", encoding="utf-8").write("\n".join(sorted(s)))
+def sv(fp,s): open(fp,"w",encoding="utf-8").write("\n".join(sorted(s)))
 def lj(fp): return json.load(open(fp, encoding="utf-8")) if os.path.exists(fp) else {}
-def sj(fp, d): open(fp, "w", encoding="utf-8").write(json.dumps(d, indent=2))
+def sj(fp,d): open(fp,"w",encoding="utf-8").write(json.dumps(d, indent=2))
 
-# ──────────────── IPZS
+# ──────────────── IPZS scraping
 def get_links(url):
     try:
         soup = BeautifulSoup(requests.get(url, timeout=10).content, "html.parser")
@@ -78,10 +75,11 @@ def scrape_ipzs(url):
     info["prezzo"] = pr.get_text(strip=True) if pr else "N/A"
 
     stock = soup.select_one("div.stock")
-    raw_text = stock.get_text(strip=True).upper() if stock else ""
+    raw = stock.get_text(strip=True).upper() if stock else ""
     info["disponibilita"] = (
-        "NON DISPONIBILE" if "NON DISPONIBILE" in raw_text else
-        "DISPONIBILE" if "DISPONIBILE" in raw_text else raw_text or "N/A"
+        "NON DISPONIBILE" if "NON DISPONIBILE" in raw else
+        "DISPONIBILE"     if "DISPONIBILE"     in raw else
+        raw or "N/A"
     )
 
     attrs = {}
@@ -90,27 +88,29 @@ def scrape_ipzs(url):
         if th and td:
             attrs[th.get_text(strip=True).lower()] = td.get_text(strip=True)
 
-    info["contingente"] = attrs.get("contingente") or attrs.get("tiratura") or attrs.get("numero pezzi", "N/A")
-    info["data disponibilita"] = attrs.get("data disponibilità") or attrs.get("data disponibilita", "N/A")
-    info["finitura"] = attrs.get("finitura", "N/A")
-    info["metallo"] = attrs.get("metallo", "N/A")
-    info["peso (gr)"] = attrs.get("peso (gr)", "N/A")
-    info["in vendita da"] = attrs.get("in vendita da", "N/A")
+    info["contingente"]        = attrs.get("contingente") or attrs.get("tiratura") or attrs.get("numero pezzi","N/A")
+    info["data disponibilita"] = attrs.get("data disponibilità") or attrs.get("data disponibilita","N/A")
+    info["finitura"]           = attrs.get("finitura","N/A")
+    info["metallo"]            = attrs.get("metallo","N/A")
+    info["peso (gr)"]          = attrs.get("peso (gr)","N/A")
+    info["in vendita da"]      = attrs.get("in vendita da","N/A")
 
     return info
 
 def parse_tiratura(txt):
-    nums = re.findall(r"\d+", txt.replace(".", "").replace(" ", ""))
+    nums = re.findall(r"\d+", txt.replace(".","").replace(" ",""))
     return int(nums[0]) if nums else None
 
-FORMATS = ["%d %b %Y", "%d %B %Y", "%d/%m/%Y", "%Y-%m-%d"]
+FORMATS = ["%d %b %Y","%d %B %Y","%d/%m/%Y","%Y-%m-%d"]
 def parse_date(txt):
     for f in FORMATS:
-        try: return datetime.strptime(txt.strip(), f)
-        except: pass
+        try:
+            return datetime.strptime(txt.strip(), f)
+        except:
+            pass
     return None
 
-# ──────────────── Notifiche
+# ──────────────── Notifiche standard
 def notify_new(prods, seen):
     for p in prods:
         if p["link"] in seen: continue
@@ -121,74 +121,105 @@ def notify_new(prods, seen):
 def notify_low(prods, alerted):
     for p in prods:
         t = parse_tiratura(p["contingente"])
-        disp = p["disponibilita"]
-        if t and t <= 1500 and "NON DISPONIBILE" not in disp and p["link"] not in alerted:
+        if t and t <= IPZS_LOW_HIGH and "NON DISPONIBILE" not in p["disponibilita"].upper() and p["link"] not in alerted:
             msg = (
                 f"<b>Moneta a bassa tiratura</b>\n"
                 f"- NOME MONETA: {p['nome']}\n"
                 f"- PREZZO: {p['prezzo']}\n"
                 f"- CONTINGENTE: {p['contingente']}\n"
                 f"- DISPONIBILITA: {p['disponibilita']}\n"
-                f"- IN VENDITA DA: {p['in vendita da']}\n"
-                f"- DATA DISPONIBILITA: {p['data disponibilita']}\n"
-                f"- FINITURA: {p['finitura']}\n"
-                f"- METALLO: {p['metallo']}\n"
-                f"- PESO (gr): {p['peso (gr)']}\n"
                 f"- LINK: {p['link']}"
             )
-            if send(msg): alerted.add(p["link"])
+            if send(msg):
+                alerted.add(p["link"])
     return alerted
 
 def notify_dates(prods, alerts):
     bucket = {}
     for p in prods:
         d = parse_date(p["data disponibilita"])
-        if d: bucket.setdefault(d.date(), []).append(p)
-    now = datetime.now(); tomorrow = (now + timedelta(days=1)).date()
-    if tomorrow in bucket and len(bucket[tomorrow]) >= 3 and now.hour >= 8:
+        if d:
+            bucket.setdefault(d.date(), []).append(p)
+    now = datetime.now()
+    tomorrow = (now + timedelta(days=1)).date()
+
+    if tomorrow in bucket and len(bucket[tomorrow])>=3 and now.hour>=8:
         key = str(tomorrow)
         if alerts.get(key) != str(now.date()):
             msg = f"<b>{len(bucket[tomorrow])} monete disponibili il {tomorrow}</b>\n"
             msg += "\n".join(f"- {x['nome']}" for x in bucket[tomorrow])
-            if send(msg): alerts[key] = str(now.date())
+            if send(msg):
+                alerts[key] = str(now.date())
     return alerts
 
 def sunday_ping():
-    now = datetime.now()
-    if now.weekday() == 6 and now.hour == 11:
+    n = datetime.now()
+    if n.weekday()==6 and n.hour==11:
         send("🔁 Check domenicale: bot attivo")
 
-# ──────────────── Spider
-SPIDER_HOURS = (7, 19)
+# ──────────────── Spider semplice
+SPIDER_HOURS=(7,19)
 def spider_allowed():
-    now = datetime.now()
-    if now.hour not in SPIDER_HOURS: return False
+    n = datetime.now()
+    if n.hour not in SPIDER_HOURS: return False
     lock = lj(SPIDER_LOCK)
     last = lock.get("ts")
-    if last and (now - datetime.fromisoformat(last)).seconds < 3600: return False
-    sj(SPIDER_LOCK, {"ts": now.isoformat()})
+    if last and (n - datetime.fromisoformat(last)).seconds<3600: return False
+    sj(SPIDER_LOCK,{"ts":n.isoformat()})
     return True
 
 def spider(start, max_urls=50, max_depth=3):
-    queue = [(u, 0) for u in start]; visited = set(); prods = []
-    while queue and len(visited) < max_urls:
-        url, d = queue.pop(0)
-        if url in visited or d > max_depth: continue
+    queue = [(u,0) for u in start]
+    visited, prods = set(), []
+    while queue and len(visited)<max_urls:
+        url,depth = queue.pop(0)
+        if url in visited or depth>max_depth: continue
         visited.add(url)
         try:
-            soup = BeautifulSoup(requests.get(url, timeout=10).content, "html.parser")
+            soup = BeautifulSoup(requests.get(url,timeout=10).content,"html.parser")
         except:
             continue
         if soup.select_one("h1.page-title span.base"):
-            prods.append(url)
-            continue
-        for a in soup.find_all("a", href=True):
+            prods.append(url); continue
+        for a in soup.find_all("a",href=True):
             h = a["href"].split("#")[0]
-            if DOMAIN in h and not h.endswith((".jpg", ".png", ".pdf")) and h not in visited:
-                queue.append((h, d + 1))
+            if DOMAIN in h and not h.endswith((".jpg",".png",".pdf")) and h not in visited:
+                queue.append((h,depth+1))
     return prods
 
-# ──────────────── MTM Monaco - Checkout carrello
+# ──────────────── Flash-cart IPZS - Checkout carrello (tiratura ≤ 500)
+def flash_ipzs_cart(products):
+    to_flash = [
+        p for p in products
+        if (t:=parse_tiratura(p["contingente"])) is not None
+           and t <= IPZS_FLASH
+           and "NON DISPONIBILE" not in p["disponibilita"].upper()
+    ]
+    if not to_flash:
+        return
+
+    driver = setup_driver_headless()
+    if not login_ipzs(driver):
+        driver.quit()
+        return
+
+    added = []
+    for p in to_flash:
+        success = add_to_cart_ipzs(driver, p["link"])
+        if success:
+            added.append(p["nome"])
+        time.sleep(1)
+
+    driver.quit()
+
+    if added:
+        cart_url = "https://www.shop.ipzs.it/it/checkout/"
+        msg = "<b>Flash-cart IPZS!</b>\nAggiunte al carrello (tiratura ≤ 500):\n"
+        msg += "\n".join(f"- {t}" for t in added)
+        msg += f"\n\n➡️ <a href=\"{cart_url}\">Vai al checkout IPZS</a>"
+        send(msg)
+
+# ──────────────── Flash-cart MTM Monaco - Checkout carrello
 def check_mtm_monaco():
     print("ℹ️ Avvio controllo MTM Monaco")
     seen = set()
@@ -272,77 +303,38 @@ def check_mtm_monaco():
         for url in seen:
             f.write(url + "\n")
 
-# ──────────────── IPZS - Checkout carrello
-def flash_ipzs_cart(products):
-    """
-    Per ogni prodotto IPZS con contingente ≤ IPZS_FLASH,
-    effettua login sullo shop IPZS e lo aggiunge al carrello.
-    Infine invia un’unica notifica Telegram con il link carrello.
-    """
-    # Filtra solo quelli veramente “flash” e disponibli
-    to_flash = [p for p in products
-                if parse_tiratura(p["contingente"]) is not None
-                   and parse_tiratura(p["contingente"]) <= IPZS_FLASH
-                   and "NON DISPONIBILE" not in p["disponibilita"].upper()]
-    if not to_flash:
-        return
-
-    # Login IPZS (riusa login_mtm con credenziali MTM_… per comodità)
-    driver = setup_driver_headless()
-    if not login_mtm(driver, username=os.getenv("MTM_USERNAME"), password=os.getenv("MTM_PASSWORD")):
-        driver.quit()
-        return
-
-    added = []
-    for p in to_flash:
-        ok = add_to_cart_and_checkout(driver, p["link"])
-
-    # login IPZS una sola volta per sessione
-    if not login_ipzs(driver):
-    	driver.quit()
-    	continue
-
-    # su ciascun prodotto a tiratura ≤ 500:
-    ok = add_to_cart_ipzs(driver, link)
-    if ok:
-    	added_titles.append(p['nome'])
-    driver.quit()
-
-    if added_titles:
-    	cart_url = "https://www.shop.ipzs.it/it/checkout/"
-    	msg = "<b>Flash-cart IPZS!</b>\nAggiunte al carrello (tiratura ≤ 500):\n"
-    	msg += "\n".join(f"- {t}" for t in added_titles)
-    	msg += f"\n\n➡️ <a href=\"{cart_url}\">Vai al checkout IPZS</a>"
-    	send(msg)
-
 # ──────────────── MAIN
 def main():
     seen    = ld(SEEN_FILE)
     alerted = ld(LOW_FILE)
     dates   = lj(DATE_FILE)
 
+    # 1️⃣ scraping IPZS
     links = set()
     for u in CATEGORY_URLS:
         links.update(get_links(u))
     if spider_allowed():
-        links.update(spider(CATEGORY_URLS, 50, 3))
+        links.update(spider(CATEGORY_URLS))
 
     prods = []
     for l in links:
         p = scrape_ipzs(l)
-        if p: prods.append(p)
+        if p:
+            prods.append(p)
         time.sleep(0.15)
 
+    # 2️⃣ notifiche IPZS
     seen    = notify_new(prods, seen)
     alerted = notify_low(prods, alerted)
     dates   = notify_dates(prods, dates)
-    flash_ipzs_cart(prods) # flash-cart per i REALLY low stock IPZS (≤500) ---
+    flash_ipzs_cart(prods)
     sunday_ping()
 
     sv(SEEN_FILE, seen)
     sv(LOW_FILE, alerted)
     sj(DATE_FILE, dates)
 
+    # 3️⃣ controllo MTM
     check_mtm_monaco()
 
 if __name__ == "__main__":
