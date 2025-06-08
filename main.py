@@ -296,19 +296,24 @@ def flash_ipzs_cart(products):
     added = []
     for p in to_flash:
         ok = add_to_cart_and_checkout(driver, p["link"])
-        if ok:
-            added.append(p)
 
+    # login IPZS una sola volta per sessione
+    if not login_ipzs(driver):
+    	driver.quit()
+    	continue
+
+    # su ciascun prodotto a tiratura ≤ 500:
+    ok = add_to_cart_ipzs(driver, link)
+    if ok:
+    	added_titles.append(p['nome'])
     driver.quit()
 
-    # Notifica finale
-    if added:
-        cart_url = "https://www.shop.ipzs.it/it/checkout/cart"
-        msg = "<b>Flash-Cart IPZS</b>\nAggiunte al carrello:\n"
-        for p in added:
-            msg += f"- {p['nome']} ({p['contingente']} pezzi)\n"
-        msg += f"\n➡️ <a href=\"{cart_url}\">Vai al checkout IPZS</a>"
-        send(msg)
+    if added_titles:
+    	cart_url = "https://www.shop.ipzs.it/it/checkout/"
+    	msg = "<b>Flash-cart IPZS!</b>\nAggiunte al carrello (tiratura ≤ 500):\n"
+    	msg += "\n".join(f"- {t}" for t in added_titles)
+    	msg += f"\n\n➡️ <a href=\"{cart_url}\">Vai al checkout IPZS</a>"
+    	send(msg)
 
 # ──────────────── MAIN
 def main():
