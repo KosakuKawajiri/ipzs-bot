@@ -29,16 +29,16 @@ def setup_driver_headless():
     driver = webdriver.Chrome(service=service, options=chrome_options)
     return driver
 
-def login_mtm(driver):
+def login_mtm(driver, username=None, password=None):
     """
     Esegue il login su MTM Monaco usando i secrets.
     Restituisce True se login avvenuto con successo, False altrimenti.
     """
-    username = os.getenv("MTM_USERNAME")
-    password = os.getenv("MTM_PASSWORD")
+    username = username or os.getenv("MTM_USERNAME")
+    password = password or os.getenv("MTM_PASSWORD")
     if not username or not password:
         print("❌ MTM_USERNAME o MTM_PASSWORD non configurati.")
-        return False
+        return False    
 
     login_url = "https://www.mtm-monaco.mc/index.php?route=account/login"
     driver.get(login_url)
@@ -105,7 +105,7 @@ def add_to_cart_and_checkout(driver, product_url):
 
     return True
 
-def flash_purchase_mtm(product_url):
+def flash_purchase_mtm(product_url, username=None, password=None):
     """
     Funzione wrapper per Selenium:
     - Crea driver headless
@@ -115,25 +115,25 @@ def flash_purchase_mtm(product_url):
     """
     driver = setup_driver_headless()
     try:
-        ok = login_mtm(driver)
+        ok = login_mtm(driver, username=username, password=password)
         if not ok:
             driver.quit()
             return False
-
         success = add_to_cart_and_checkout(driver, product_url)
         if not success:
             driver.quit()
             return False
-
         # A questo punto il carrello è pronto.
         # Puoi, se vuoi, procedere al checkout automatico inserendo dati di spedizione.
         # Ma almeno il carrello è popolato e puoi intervenire manualmente velocemente.
         return True
-
-    except Exception as e:
-        print("❌ Errore in flash_purchase_mtm:", e)
+    #except Exception as e:
+       # print("❌ Errore in flash_purchase_mtm:", e)
+       # driver.quit()
+       # return False
+    finally:
         driver.quit()
-        return False
+   
 
 # ===== Esempio di utilizzo standalone =====
 if __name__ == "__main__":
