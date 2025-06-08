@@ -2,6 +2,7 @@ from mtm_flash import setup_driver_headless, login_mtm, add_to_cart_and_checkout
 import requests, re, os, json, time
 from bs4 import BeautifulSoup
 from datetime import datetime, timedelta
+from mtm_flash import setup_driver_headless, login_mtm, add_to_cart_and_checkout
 
 # ──────────────── MTM Credentials
 MTM_ACCOUNTS = [
@@ -15,6 +16,10 @@ LOW_FILE        = "low_mintage_alerts.txt"
 DATE_FILE       = "date_alerts.json"
 SPIDER_LOCK     = "last_spider.json"
 MTM_SEEN_FILE   = "seen_mtm.txt"
+
+# ──────────────── Limiti tirature IPZS per logiche su alert e carrello 
+IPZS_LOW_HIGH = 1500   # già gestiti
+IPZS_FLASH    = 500    # soglia per flash‐cart
 
 # ──────────────── IPZS Config
 CATEGORY_URLS = [
@@ -183,7 +188,7 @@ def spider(start, max_urls=50, max_depth=3):
                 queue.append((h, d + 1))
     return prods
 
-# ──────────────── MTM Monaco
+# ──────────────── MTM Monaco - Checkout carrello
 def check_mtm_monaco():
     print("ℹ️ Avvio controllo MTM Monaco")
     seen = set()
@@ -259,13 +264,51 @@ def check_mtm_monaco():
         msg = "<b>Flash monete Monaco!</b>\nSono state aggiunte al carrello:\n"
         for t in added_titles:
             msg += f"- {t}\n"
-        msg += f"\n➡️ <a href=\"{cart_url}\">Vai subito al carrello</a>"
+        msg += f"\n➡️ <a href=\"{cart_url}\">Vai al checkout MTM Monaco</a>"
         send(msg)
 
     # infine aggiorna il file seen_mtm.txt
     with open(MTM_SEEN_FILE, "w", encoding="utf-8") as f:
         for url in seen:
             f.write(url + "\n")
+
+# ──────────────── IPZS - Checkout carrello
+def flash_ipzs_cart(products):
+    """
+    Per ogni prodotto IPZS con contingente ≤ IPZS_FLASH,
+    effettua login sullo shop IPZS e lo aggiunge al carrello.
+    Infine invia un’unica notifica Telegram con il link carrello.
+    """
+    # Filtra solo quelli veramente “flash” e disponibli
+    to_flash = [p for p in products
+                if parse_tiratura(p["contingente"]) is not None
+                   and parse_tiratura(p["contingente"]) <= IPZS_FLASH
+                   and "NON DISPONIBILE" not in p["disponibilita"].upper()]
+    if not to_flash:
+        return
+
+    # Login IPZS (riusa login_mtm con credenziali MTM_… per comodità)
+    driver = setup_driver_headless()
+    if not login_mtm(driver, username=os.getenv("MTM_USERNAME"), password=os.getenv("MTM_PASSWORD")):
+        driver.quit()
+        return
+
+    added = []
+    for p in to_flash:
+        ok = add_to_cart_and_checkout(driver, p["link"])
+        if ok:
+            added.append(p)
+
+    driver.quit()
+
+    # Notifica finale
+    if added:
+        cart_url = "https://www.shop.ipzs.it/it/checkout/cart"
+        msg = "<b>Flash-Cart IPZS</b>\nAggiunte al carrello:\n"
+        for p in added:
+            msg += f"- {p['nome']} ({p['contingente']} pezzi)\n"
+        msg += f"\n➡️ <a href=\"{cart_url}\">Vai al checkout IPZS</a>"
+        send(msg)
 
 # ──────────────── MAIN
 def main():
@@ -288,6 +331,7 @@ def main():
     seen    = notify_new(prods, seen)
     alerted = notify_low(prods, alerted)
     dates   = notify_dates(prods, dates)
+    flash_ipzs_cart(prods) # flash-cart per i REALLY low stock IPZS (≤500) ---
     sunday_ping()
 
     sv(SEEN_FILE, seen)
