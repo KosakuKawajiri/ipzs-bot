@@ -26,6 +26,10 @@ CATEGORY_URLS = [
 ]
 DOMAIN = "www.shop.ipzs.it"
 
+# ──────────────── MTM Monaco Config
+MTM_ROOT     = "https://www.mtm-monaco.mc/index.php?route=common/home"
+MTM_DOMAIN   = "www.mtm-monaco.mc"
+
 # ──────────────── Telegram helper
 def send(text: str) -> bool:
     token = os.getenv("TELEGRAM_TOKEN")
