@@ -117,23 +117,20 @@ def flash_purchase_mtm(product_url, username=None, password=None):
     try:
         ok = login_mtm(driver, username=username, password=password)
         if not ok:
-            driver.quit()
             return False
         success = add_to_cart_and_checkout(driver, product_url)
         if not success:
-            driver.quit()
             return False
+        return True
         # A questo punto il carrello è pronto.
         # Puoi, se vuoi, procedere al checkout automatico inserendo dati di spedizione.
         # Ma almeno il carrello è popolato e puoi intervenire manualmente velocemente.
-        return True
-    #except Exception as e:
-       # print("❌ Errore in flash_purchase_mtm:", e)
-       # driver.quit()
-       # return False
+    except Exception as e:
+        print("❌ Errore in flash_purchase_mtm:", e)
+        return False
     finally:
+        # il finally assicura sempre il quit
         driver.quit()
-   
 
 # ===== Esempio di utilizzo standalone =====
 if __name__ == "__main__":
