@@ -181,25 +181,25 @@ def spider(start, max_urls=50, max_depth=3):
 
 # ──────────────── MTM Monaco
 def check_mtm_monaco():
-     print("ℹ️ Avvio controllo MTM Monaco")
-     seen = set()
-     if os.path.exists(MTM_SEEN_FILE):
+    print("ℹ️ Avvio controllo MTM Monaco")
+    seen = set()
+    if os.path.exists(MTM_SEEN_FILE):
          with open(MTM_SEEN_FILE, "r", encoding="utf-8") as f:
              seen = {line.strip() for line in f if line.strip()}
-     print(f"🧾 Link già visti: {len(seen)}")
+    print(f"🧾 Link già visti: {len(seen)}")
 
-     # --- costruisco new_products con il tuo scraping MTM Monaco ---
-     new_products = []
+    # --- costruisco new_products con il tuo scraping MTM Monaco ---
+    new_products = []
 	 
-     # 1. prendo la homepage e tutte le categorie product/category
-     homepage = BeautifulSoup(requests.get(MTM_ROOT, timeout=10).content, "html.parser")
-     cat_links = [
+    # 1. prendo la homepage e tutte le categorie product/category
+    homepage = BeautifulSoup(requests.get(MTM_ROOT, timeout=10).content, "html.parser")
+    cat_links = [
          a["href"] for a in homepage.find_all("a", href=True)
          if "product/category" in a["href"]
-     ]
+	]
 	 
      # 2. passo ciascuna categoria e prendo tutti i blocchi .product-thumb
-     for cat_url in cat_links:
+    for cat_url in cat_links:
          try:
              cat_page = BeautifulSoup(requests.get(cat_url, timeout=10).content, "html.parser")
          except:
@@ -218,7 +218,7 @@ def check_mtm_monaco():
              new_products.append((title, price, link))
              seen.add(link)
  
-     if not new_products:
+    if not new_products:
          print("❌ Nessun nuovo prodotto, esco.")
          return
 
