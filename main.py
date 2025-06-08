@@ -180,7 +180,7 @@ def spider(start, max_urls=50, max_depth=3):
     return prods
 
 # ──────────────── MTM Monaco
- def check_mtm_monaco():
+def check_mtm_monaco():
      print("ℹ️ Avvio controllo MTM Monaco")
      seen = set()
      if os.path.exists(MTM_SEEN_FILE):
