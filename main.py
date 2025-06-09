@@ -52,7 +52,15 @@ def send(text: str) -> bool:
 # ──────────────── File helpers
 def ld(fp): return set(open(fp, encoding="utf-8").read().splitlines()) if os.path.exists(fp) else set()
 def sv(fp,s): open(fp,"w",encoding="utf-8").write("\n".join(sorted(s)))
-def lj(fp): return json.load(open(fp, encoding="utf-8")) if os.path.exists(fp) else {}
+def lj(fp):
+    if not os.path.exists(fp):
+        return {}
+    try:
+        with open(fp, encoding="utf-8") as f:
+            return json.load(f)
+    except json.JSONDecodeError:
+        print(f"⚠️ Il file {fp} è corrotto o vuoto, verrà ignorato.")
+        return {}
 def sj(fp,d): open(fp,"w",encoding="utf-8").write(json.dumps(d, indent=2))
 
 # ──────────────── IPZS scraping
