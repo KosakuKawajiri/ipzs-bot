@@ -189,11 +189,15 @@ def spider(start, max_urls=50, max_depth=3):
 
 # ──────────────── Flash-cart IPZS - Checkout carrello (tiratura ≤ 500)
 def flash_ipzs_cart(products):
+    FLASH_SEEN_FILE = "ipzs_flash_seen.txt"
+    already_flashed = ld(FLASH_SEEN_FILE)
+
     to_flash = [
         p for p in products
-        if (t:=parse_tiratura(p["contingente"])) is not None
+        if (t := parse_tiratura(p["contingente"])) is not None
            and t <= IPZS_FLASH
            and "NON DISPONIBILE" not in p["disponibilita"].upper()
+           and p["link"] not in already_flashed
     ]
     if not to_flash:
         return
@@ -208,9 +212,11 @@ def flash_ipzs_cart(products):
         success = add_to_cart_ipzs(driver, p["link"])
         if success:
             added.append(p["nome"])
+            already_flashed.add(p["link"])
         time.sleep(1)
 
     driver.quit()
+    sv(FLASH_SEEN_FILE, already_flashed)
 
     if added:
         cart_url = "https://www.shop.ipzs.it/it/checkout/"
