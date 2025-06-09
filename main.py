@@ -196,47 +196,52 @@ def spider(start, max_urls=50, max_depth=3):
     return prods
 
 # ──────────────── Flash-cart IPZS - Checkout carrello (tiratura ≤ 500)
+FLASH_LOG_FILE = "ipzs_flash_log.json"
+
 def flash_ipzs_cart(products):
-    FLASH_LOG_FILE = "ipzs_flash_log.json"
-    flash_log = lj(FLASH_LOG_FILE)  # link: last_date (YYYY-MM-DD)
-    today = datetime.now().date()
-
-    to_flash = []
-    for p in products:
-        link = p["link"]
-        t = parse_tiratura(p["contingente"])
-        disp = p["disponibilita"]
-        if t is None or t > IPZS_FLASH or "NON DISPONIBILE" in disp.upper():
-            continue
-        last = flash_log.get(link)
-        if last:
-            try:
-                last_dt = datetime.fromisoformat(last).date()
-                if (today - last_dt).days < 30:
-                    continue  # già inserita nel carrello meno di 30 giorni fa
-            except:
-                pass
-        to_flash.append(p)
-
+    to_flash = [
+        p for p in products
+        if (t := parse_tiratura(p["contingente"])) is not None
+        and t <= IPZS_FLASH
+        and "NON DISPONIBILE" not in p["disponibilita"].upper()
+    ]
     if not to_flash:
         return
 
+    # --- carica log delle flash (una al mese)
+    try:
+        flash_log = lj(FLASH_LOG_FILE)
+    except:
+        print("⚠️ Il file ipzs_flash_log.json è corrotto o vuoto, verrà ignorato.")
+        flash_log = {}
+
+    today = datetime.now().date()
+    added = []
+
+    # --- login IPZS
     driver = setup_driver_headless()
     if not login_ipzs(driver):
         driver.quit()
         return
 
-    added = []
     for p in to_flash:
-        success = add_to_cart_ipzs(driver, p["link"])
-        if success:
-            added.append(p["nome"])
-            flash_log[p["link"]] = today.isoformat()
-        time.sleep(1)
+        last = flash_log.get(p["link"])
+        last_dt = datetime.strptime(last, "%Y-%m-%d").date() if last else None
+        delta_ok = not last_dt or (today - last_dt).days >= 30
+
+        if delta_ok:
+            success = add_to_cart_ipzs(driver, p["link"])
+            if success:
+                added.append(p["nome"])
+                flash_log[p["link"]] = today.isoformat()
+            time.sleep(1)
 
     driver.quit()
+
+    # --- salva file log aggiornato
     sj(FLASH_LOG_FILE, flash_log)
 
+    # --- notifica Telegram
     if added:
         cart_url = "https://www.shop.ipzs.it/it/checkout/"
         msg = "<b>Flash-cart IPZS!</b>\nAggiunte al carrello (tiratura ≤ 500):\n"
