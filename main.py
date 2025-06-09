@@ -199,55 +199,86 @@ def spider(start, max_urls=50, max_depth=3):
 FLASH_LOG_FILE = "ipzs_flash_log.json"
 
 def flash_ipzs_cart(products):
+    # 1️⃣ Filtra i prodotti ≤ soglia FLASH
     to_flash = [
         p for p in products
         if (t := parse_tiratura(p["contingente"])) is not None
-        and t <= IPZS_FLASH
-        and "NON DISPONIBILE" not in p["disponibilita"].upper()
+           and t <= IPZS_FLASH
+           and "NON DISPONIBILE" not in p["disponibilita"].upper()
     ]
+    print(f"🔍 flash_ipzs_cart → prodotti candidati (≤{IPZS_FLASH}): {[p['link'] for p in to_flash]}")
+
     if not to_flash:
+        print("ℹ️ flash_ipzs_cart → nessun prodotto da flash-carto, esco.")
         return
 
-    # --- carica log delle flash (una al mese)
-    try:
-        flash_log = lj(FLASH_LOG_FILE)
-    except:
-        print("⚠️ Il file ipzs_flash_log.json è corrotto o vuoto, verrà ignorato.")
-        flash_log = {}
+    # 2️⃣ Carica storico flash
+    flash_log = {}
+    if os.path.exists(FLASH_LOG_FILE):
+        try:
+            flash_log = lj(FLASH_LOG_FILE)
+            print(f"🧾 flash_ipzs_cart → log caricato: {flash_log}")
+        except Exception as e:
+            print(f"⚠️ flash_ipzs_cart → errore lettura {FLASH_LOG_FILE}: {e}; userò log vuoto")
+    else:
+        print(f"ℹ️ flash_ipzs_cart → {FLASH_LOG_FILE} non esiste, userò log vuoto")
 
     today = datetime.now().date()
     added = []
 
-    # --- login IPZS
+    # 3️⃣ Login IPZS
     driver = setup_driver_headless()
     if not login_ipzs(driver):
+        print("❌ flash_ipzs_cart → login IPZS fallito, esco.")
         driver.quit()
         return
+    print("✅ flash_ipzs_cart → login IPZS riuscito")
 
+    # 4️⃣ Per ciascun prodotto, controlla se è già stato flashato nell’ultimo mese
     for p in to_flash:
-        last = flash_log.get(p["link"])
-        last_dt = datetime.strptime(last, "%Y-%m-%d").date() if last else None
-        delta_ok = not last_dt or (today - last_dt).days >= 30
+        link = p["link"]
+        last = flash_log.get(link)
+        last_dt = None
+        if last:
+            try:
+                last_dt = datetime.strptime(last, "%Y-%m-%d").date()
+            except:
+                print(f"⚠️ flash_ipzs_cart → formato data invalido in log per {link}: {last}")
+        days = (today - last_dt).days if last_dt else None
+        print(f"   • {link} — ultimo flash: {last_dt} ({days} giorni fa)")
 
-        if delta_ok:
-            success = add_to_cart_ipzs(driver, p["link"])
+        # decido se posso riflashare
+        if last_dt is None or (today - last_dt).days >= 30:
+            print(f"     → OK, provo add_to_cart")
+            success = add_to_cart_ipzs(driver, link)
+            print(f"       add_to_cart_ipzs → {'OK' if success else 'Fallito'}")
             if success:
                 added.append(p["nome"])
-                flash_log[p["link"]] = today.isoformat()
-            time.sleep(1)
+                flash_log[link] = today.isoformat()
+        else:
+            print("     → saltato (flash già fatto meno di 30 giorni fa)")
+
+        time.sleep(1)
 
     driver.quit()
 
-    # --- salva file log aggiornato
-    sj(FLASH_LOG_FILE, flash_log)
+    # 5️⃣ Salvo log aggiornato
+    try:
+        sj(FLASH_LOG_FILE, flash_log)
+        print(f"💾 flash_ipzs_cart → log salvato: {flash_log}")
+    except Exception as e:
+        print(f"❌ flash_ipzs_cart → errore salvataggio log: {e}")
 
-    # --- notifica Telegram
+    # 6️⃣ Notifica Telegram
     if added:
         cart_url = "https://www.shop.ipzs.it/it/checkout/"
         msg = "<b>Flash-cart IPZS!</b>\nAggiunte al carrello (tiratura ≤ 500):\n"
         msg += "\n".join(f"- {t}" for t in added)
         msg += f"\n\n➡️ <a href=\"{cart_url}\">Vai al checkout IPZS</a>"
+        print(f"✉️ flash_ipzs_cart → invio notifica Telegram per: {added}")
         send(msg)
+    else:
+        print("ℹ️ flash_ipzs_cart → nessuna aggiunta, nessuna notifica inviata")
 	    
 # ──────────────── Flash-cart MTM Monaco - Checkout carrello
 def check_mtm_monaco():
