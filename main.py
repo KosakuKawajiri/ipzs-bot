@@ -189,16 +189,27 @@ def spider(start, max_urls=50, max_depth=3):
 
 # ──────────────── Flash-cart IPZS - Checkout carrello (tiratura ≤ 500)
 def flash_ipzs_cart(products):
-    FLASH_SEEN_FILE = "ipzs_flash_seen.txt"
-    already_flashed = ld(FLASH_SEEN_FILE)
+    FLASH_LOG_FILE = "ipzs_flash_log.json"
+    flash_log = lj(FLASH_LOG_FILE)  # link: last_date (YYYY-MM-DD)
+    today = datetime.now().date()
 
-    to_flash = [
-        p for p in products
-        if (t := parse_tiratura(p["contingente"])) is not None
-           and t <= IPZS_FLASH
-           and "NON DISPONIBILE" not in p["disponibilita"].upper()
-           and p["link"] not in already_flashed
-    ]
+    to_flash = []
+    for p in products:
+        link = p["link"]
+        t = parse_tiratura(p["contingente"])
+        disp = p["disponibilita"]
+        if t is None or t > IPZS_FLASH or "NON DISPONIBILE" in disp.upper():
+            continue
+        last = flash_log.get(link)
+        if last:
+            try:
+                last_dt = datetime.fromisoformat(last).date()
+                if (today - last_dt).days < 30:
+                    continue  # già inserita nel carrello meno di 30 giorni fa
+            except:
+                pass
+        to_flash.append(p)
+
     if not to_flash:
         return
 
@@ -212,11 +223,11 @@ def flash_ipzs_cart(products):
         success = add_to_cart_ipzs(driver, p["link"])
         if success:
             added.append(p["nome"])
-            already_flashed.add(p["link"])
+            flash_log[p["link"]] = today.isoformat()
         time.sleep(1)
 
     driver.quit()
-    sv(FLASH_SEEN_FILE, already_flashed)
+    sj(FLASH_LOG_FILE, flash_log)
 
     if added:
         cart_url = "https://www.shop.ipzs.it/it/checkout/"
@@ -224,7 +235,7 @@ def flash_ipzs_cart(products):
         msg += "\n".join(f"- {t}" for t in added)
         msg += f"\n\n➡️ <a href=\"{cart_url}\">Vai al checkout IPZS</a>"
         send(msg)
-
+	    
 # ──────────────── Flash-cart MTM Monaco - Checkout carrello
 def check_mtm_monaco():
     print("ℹ️ Avvio controllo MTM Monaco")
