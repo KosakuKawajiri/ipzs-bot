@@ -46,6 +46,6 @@ jobs:
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
-          git add seen.txt low_mintage_alerts.txt date_alerts.json last_spider.json || true
+          git add seen.txt low_mintage_alerts.txt date_alerts.json last_spider.json ipzs_flash_log.json || true
           git diff --cached --quiet || git commit -m "Aggiornamento automatico file di stato"
           git push || echo "Push non necessario o non riuscito"   
