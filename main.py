@@ -395,13 +395,7 @@ def main():
 	sv(LOW_FILE, alerted)
 	sj(DATE_FILE, dates)
 
-	# POI flash cart
-    try:
-    	flash_ipzs_cart(prods)
-	except Exception as e:
-    	print(f"❌ Errore flash_ipzs_cart: {e}")
-
-sunday_ping()
+	sunday_ping()
 
     # 3️⃣ controllo MTM
     check_mtm_monaco()
