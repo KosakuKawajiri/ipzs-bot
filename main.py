@@ -122,6 +122,7 @@ def parse_date(txt):
 def notify_new(prods, seen):
     for p in prods:
         if p["link"] in seen: continue
+		if "NON DISPONIBILE" in p["disponibilita"].upper(): continue
         if send(f"<b>Nuova moneta</b>\n{p['nome']}\n{p['prezzo']}\n{p['link']}"):
             seen.add(p["link"])
     return seen
