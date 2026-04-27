@@ -388,12 +388,15 @@ def main():
     seen    = notify_new(prods, seen)
     alerted = notify_low(prods, alerted)
     dates   = notify_dates(prods, dates)
+
+	# SALVA SUBITO
+	sv(SEEN_FILE, seen)
+	sv(LOW_FILE, alerted)
+	sj(DATE_FILE, dates)
+
+	# POI flash cart
     flash_ipzs_cart(prods)
     sunday_ping()
-
-    sv(SEEN_FILE, seen)
-    sv(LOW_FILE, alerted)
-    sj(DATE_FILE, dates)
 
     # 3️⃣ controllo MTM
     check_mtm_monaco()
