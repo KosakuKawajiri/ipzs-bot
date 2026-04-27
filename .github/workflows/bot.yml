@@ -1,5 +1,8 @@
 name: IPZS Bot Scheduler
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 on:
   schedule:
     # Esecuzione ogni 50 minuti da Dicembre a Giugno, tra le 7:00/8:00 e le 21:59/22:59 (sono GMT+1/+2)
