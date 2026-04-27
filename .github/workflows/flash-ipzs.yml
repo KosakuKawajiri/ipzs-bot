@@ -1,0 +1,41 @@
+name: Flash IPZS Scheduler
+
+on:
+  schedule:
+    - cron: '*/15 6-20 * * *'
+  workflow_dispatch:
+
+jobs:
+  flash-ipzs:
+    name: Flash Cart IPZS
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run Flash IPZS
+        run: python flash_ipzs_runner.py
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          CHAT_ID: ${{ secrets.CHAT_ID }}
+          MTM_USERNAME: ${{ secrets.MTM_USERNAME }}
+          MTM_PASSWORD: ${{ secrets.MTM_PASSWORD }}
+
+      - name: Commit state files
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add ipzs_flash_log.json || true
+          git diff --cached --quiet || git commit -m "Aggiornamento flash IPZS"
+          git push || echo "Nessun push necessario"
