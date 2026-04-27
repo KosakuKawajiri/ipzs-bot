@@ -395,6 +395,7 @@ def main():
 	sv(LOW_FILE, alerted)
 	sj(DATE_FILE, dates)
 
+	# Controllo domenicale
 	sunday_ping()
 
     # 3️⃣ controllo MTM
