@@ -5,10 +5,52 @@ from selenium.webdriver.support import expected_conditions as EC
 
 # ─────────── Login IPZS ───────────
 def login_ipzs(driver):
-    driver.get("https://www.shop.ipzs.it/it/customer/account/login/")
-    WebDriverWait(driver, 10).until(
-        EC.presence_of_element_located((By.ID, "email"))
-    )
+    login_url = "https://www.shop.ipzs.it/it/customer/account/login/"
+    driver.get(login_url)
+
+    print(f"🌐 URL iniziale: {driver.current_url}")
+
+    # ─────────── Gestione Queue-it ───────────
+    if "queue-it" in driver.current_url.lower():
+        print("⏳ Queue-it rilevato: attendo uscita dalla coda...")
+
+        try:
+            WebDriverWait(driver, 300).until(
+                lambda d: "queue-it" not in d.current_url.lower()
+            )
+            print(f"✅ Uscito dalla coda. Nuovo URL: {driver.current_url}")
+
+        except Exception as e:
+            print(f"❌ Timeout attesa Queue-it: {e}")
+            return False
+
+    # ─────────── Attesa login page reale ───────────
+    try:
+        WebDriverWait(driver, 20).until(
+            EC.presence_of_element_located((By.ID, "email"))
+        )
+    except Exception as e:
+        print(f"❌ Campo email non trovato: {e}")
+        print(f"🔎 URL corrente: {driver.current_url}")
+        return False
+
+    # ─────────── Login ───────────
+    driver.find_element(By.ID, "email").send_keys(os.getenv("MTM_USERNAME"))
+    driver.find_element(By.ID, "passw").send_keys(os.getenv("MTM_PASSWORD"))
+    driver.find_element(By.ID, "send3").click()
+
+    try:
+        WebDriverWait(driver, 15).until(
+            EC.url_contains("/it/customer/account/")
+        )
+        print("✅ Login IPZS riuscito.")
+        return True
+
+    except Exception as e:
+        print(f"❌ Login IPZS fallito: {e}")
+        print(f"🔎 URL finale: {driver.current_url}")
+        return False
+        
     driver.find_element(By.ID, "email").send_keys(os.getenv("MTM_USERNAME"))
     driver.find_element(By.ID, "passw").send_keys(os.getenv("MTM_PASSWORD"))
     driver.find_element(By.ID, "send3").click()
