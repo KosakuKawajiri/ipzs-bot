@@ -51,17 +51,6 @@ def login_ipzs(driver):
         print(f"🔎 URL finale: {driver.current_url}")
         return False
 
-    # aspetta redirect alla dashboard o URL di account
-    try:
-        WebDriverWait(driver, 10).until(
-            EC.url_contains("/it/customer/account/")
-        )
-        print("✅ Login IPZS riuscito.")
-        return True
-    except:
-        print("❌ Login IPZS fallito.")
-        return False
-
 # ─────────── Aggiungi al carrello IPZS ───────────
 def add_to_cart_ipzs(driver, product_url):
     driver.get(product_url)
