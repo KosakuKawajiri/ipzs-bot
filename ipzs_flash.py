@@ -20,6 +20,9 @@ def login_ipzs(driver):
             )
             print(f"✅ Uscito dalla coda. Nuovo URL: {driver.current_url}")
 
+            driver.get(login_url)
+            print(f"🔁 Riapro login page: {driver.current_url}")
+
         except Exception as e:
             print(f"❌ Timeout attesa Queue-it: {e}")
             return False
@@ -54,6 +57,21 @@ def login_ipzs(driver):
 # ─────────── Aggiungi al carrello IPZS ───────────
 def add_to_cart_ipzs(driver, product_url):
     driver.get(product_url)
+
+    if "queue-it" in driver.current_url.lower():
+    print("⏳ Queue-it rilevato sulla pagina prodotto...")
+
+    try:
+        WebDriverWait(driver, 300).until(
+            lambda d: "queue-it" not in d.current_url.lower()
+        )
+
+        driver.get(product_url)
+        print(f"🔁 Riapro pagina prodotto: {driver.current_url}")
+
+    except Exception as e:
+        print(f"❌ Timeout Queue-it prodotto: {e}")
+        return False
 
     # attendi che il campo quantità sia presente
     WebDriverWait(driver, 10).until(
