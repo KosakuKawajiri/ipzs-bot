@@ -1,4 +1,5 @@
 import os
+import time
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -42,6 +43,21 @@ def login_ipzs(driver):
     driver.find_element(By.ID, "passw").send_keys(os.getenv("MTM_PASSWORD"))
     driver.find_element(By.ID, "send3").click()
 
+    time.sleep(3)
+
+    if "queue-it" in driver.current_url.lower():
+        print("⏳ Queue-it rilevato dopo il login...")
+
+        try:
+            WebDriverWait(driver, 300).until(
+                lambda d: "queue-it" not in d.current_url.lower()
+            )
+            print(f"✅ Uscito dalla Queue-it post-login: {driver.current_url}")
+
+        except Exception as e:
+            print(f"❌ Timeout Queue-it post-login: {e}")
+            return False
+        
     try:
         WebDriverWait(driver, 15).until(
             EC.url_contains("/it/customer/account/")
