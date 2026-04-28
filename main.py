@@ -121,10 +121,20 @@ def parse_date(txt):
 # ──────────────── Notifiche standard
 def notify_new(prods, seen):
     for p in prods:
-        if p["link"] in seen: continue
-		if "NON DISPONIBILE" in p["disponibilita"].upper(): continue
-        if send(f"<b>Nuova moneta</b>\n{p['nome']}\n{p['prezzo']}\n{p['link']}"):
+        if p["link"] in seen:
+            continue
+
+        if "NON DISPONIBILE" in p["disponibilita"].upper():
+            continue
+
+        if send(
+            f"<b>Nuova moneta</b>\n"
+            f"{p['nome']}\n"
+            f"{p['prezzo']}\n"
+            f"{p['link']}"
+        ):
             seen.add(p["link"])
+
     return seen
 
 def notify_low(prods, alerted):
@@ -390,13 +400,13 @@ def main():
     alerted = notify_low(prods, alerted)
     dates   = notify_dates(prods, dates)
 
-	# SALVA SUBITO
-	sv(SEEN_FILE, seen)
-	sv(LOW_FILE, alerted)
-	sj(DATE_FILE, dates)
+	# SALVA SUBBITO
+    sv(SEEN_FILE, seen)
+    sv(LOW_FILE, alerted)
+    sj(DATE_FILE, dates)
 
-	# Controllo domenicale
-	sunday_ping()
+    # Controllo domenicale
+    sunday_ping()
 
     # 3️⃣ controllo MTM
     check_mtm_monaco()
