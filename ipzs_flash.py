@@ -58,41 +58,58 @@ def login_ipzs(driver):
 def add_to_cart_ipzs(driver, product_url):
     driver.get(product_url)
 
+    # ─────────── Gestione Queue-it sulla pagina prodotto ───────────
     if "queue-it" in driver.current_url.lower():
-    print("⏳ Queue-it rilevato sulla pagina prodotto...")
+        print("⏳ Queue-it rilevato sulla pagina prodotto...")
 
+        try:
+            WebDriverWait(driver, 300).until(
+                lambda d: "queue-it" not in d.current_url.lower()
+            )
+
+            driver.get(product_url)
+            print(f"🔁 Riapro pagina prodotto: {driver.current_url}")
+
+        except Exception as e:
+            print(f"❌ Timeout Queue-it prodotto: {e}")
+            return False
+
+    # ─────────── Attesa campo quantità ───────────
     try:
-        WebDriverWait(driver, 300).until(
-            lambda d: "queue-it" not in d.current_url.lower()
+        WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.ID, "qty"))
         )
-
-        driver.get(product_url)
-        print(f"🔁 Riapro pagina prodotto: {driver.current_url}")
-
     except Exception as e:
-        print(f"❌ Timeout Queue-it prodotto: {e}")
+        print(f"❌ Campo quantità non trovato: {e}")
+        print(f"🔎 URL corrente: {driver.current_url}")
         return False
 
-    # attendi che il campo quantità sia presente
-    WebDriverWait(driver, 10).until(
-        EC.presence_of_element_located((By.ID, "qty"))
-    )
     qty = driver.find_element(By.ID, "qty")
     qty.clear()
     qty.send_keys("1")
 
-    # clicca il pulsante "Aggiungi al Carrello"
-    add_btn = driver.find_element(By.ID, "product-addtocart-button")
-    add_btn.click()
-
-    # attendi O toast di successo O redirect al carrello
+    # ─────────── Click Aggiungi al carrello ───────────
     try:
-        WebDriverWait(driver, 10).until(lambda d: 
-            "/checkout/cart" in d.current_url
-            or len(d.find_elements(By.CSS_SELECTOR, ".message-success")) > 0
+        add_btn = driver.find_element(By.ID, "product-addtocart-button")
+        add_btn.click()
+    except Exception as e:
+        print(f"❌ Pulsante add-to-cart non trovato: {e}")
+        return False
+
+    # ─────────── Verifica successo ───────────
+    try:
+        WebDriverWait(driver, 10).until(
+            lambda d:
+                "/checkout/cart" in d.current_url
+                or len(d.find_elements(By.CSS_SELECTOR, ".message-success")) > 0
         )
+
         print(f"✅ add_to_cart_ipzs: prodotto aggiunto ({driver.current_url})")
         return True
+
     except Exception as e:
-        print(f"❌ add_to_cart_ipzs fallito per {product_url}: {e}; current_url={driver.current_url}")
+        print(
+            f"❌ add_to_cart_ipzs fallito per {product_url}: {e}; "
+            f"current_url={driver.current_url}"
+        )
         return False
