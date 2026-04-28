@@ -50,10 +50,6 @@ def login_ipzs(driver):
         print(f"❌ Login IPZS fallito: {e}")
         print(f"🔎 URL finale: {driver.current_url}")
         return False
-        
-    driver.find_element(By.ID, "email").send_keys(os.getenv("MTM_USERNAME"))
-    driver.find_element(By.ID, "passw").send_keys(os.getenv("MTM_PASSWORD"))
-    driver.find_element(By.ID, "send3").click()
 
     # aspetta redirect alla dashboard o URL di account
     try:
