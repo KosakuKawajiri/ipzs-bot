@@ -400,7 +400,7 @@ def main():
     alerted = notify_low(prods, alerted)
     dates   = notify_dates(prods, dates)
 
-	# SALVA SUBBITO
+    # SALVA SUBITO
     sv(SEEN_FILE, seen)
     sv(LOW_FILE, alerted)
     sj(DATE_FILE, dates)
