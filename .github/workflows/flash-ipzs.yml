@@ -5,7 +5,12 @@ env:
 
 on:
   schedule:
-    - cron: '*/15 6-20 * * *'
+    # Dicembre → Maggio: si esegue ogni 15 minuti, tra le 06:00 di mattina e le 20:59
+    - cron: '*/15 6-20 * 12,1,2,3,4,5 *'
+
+    # Giugno → Novembre: si esegue ogni 30 minuti, tra le 06:00 di mattina e le 20:59
+    - cron: '*/30 6-20 * 6,7,8,9,10,11 *'
+
   workflow_dispatch:
 
 jobs:
