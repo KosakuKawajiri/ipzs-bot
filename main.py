@@ -296,16 +296,19 @@ def check_mtm_monaco():
     print("ℹ️ Avvio controllo MTM Monaco")
     seen = set()
     if os.path.exists(MTM_SEEN_FILE):
-         with open(MTM_SEEN_FILE, "r", encoding="utf-8") as f:
-             seen = {line.strip() for line in f if line.strip()}
+        with open(MTM_SEEN_FILE, "r", encoding="utf-8") as f:
+            seen = {line.strip() for line in f if line.strip()}
     print(f"🧾 Link già visti: {len(seen)}")
 
     # --- costruisco new_products con il tuo scraping MTM Monaco ---
     new_products = []
-	 
+
     # 1. prendo la homepage e tutte le categorie product/category
     for i in range(3):
         try:
+            headers = {
+                "User-Agent": "Mozilla/5.0"
+            }
             response = requests.get(MTM_ROOT, timeout=20)
             homepage = BeautifulSoup(response.content, "html.parser")
 
@@ -331,23 +334,32 @@ def check_mtm_monaco():
 	 
     # 2. passo ciascuna categoria e prendo tutti i blocchi .product-thumb
     for cat_url in cat_links:
-         try:
-             cat_page = BeautifulSoup(requests.get(cat_url, timeout=10).content, "html.parser")
-         except:
-             continue
-         for block in cat_page.select(".product-thumb"):
-             a_tag = block.find("a", href=True)
-             title_tag = block.select_one("h4")
-             price_tag = block.select_one(".price")
-             if not a_tag or not title_tag:
-                 continue
-             link  = a_tag["href"]
-             title = title_tag.get_text(strip=True)
-             price = price_tag.get_text(strip=True) if price_tag else "N/D"
-             if link in seen:
-                 continue
-             new_products.append((title, price, link))
-             seen.add(link)
+
+        try:
+            response = requests.get(cat_url, timeout=10)
+            cat_page = BeautifulSoup(response.content, "html.parser")
+        except Exception as e:
+            print(f"⚠️ Errore categoria MTM: {e}")
+            continue
+
+        for block in cat_page.select(".product-thumb"):
+            a_tag = block.find("a", href=True)
+            title_tag = block.select_one("h4")
+            price_tag = block.select_one(".price")
+
+            if not a_tag or not title_tag:
+                continue
+
+            link  = a_tag["href"]
+            title = title_tag.get_text(strip=True)
+            price = price_tag.get_text(strip=True) if price_tag else "N/D"
+
+            if link in seen:
+                continue
+
+            new_products.append((title, price, link))
+            seen.add(link)
+                print(f"🆕 Nuovi prodotti trovati MTM: {len(new_products)}")
 
     if not new_products:
         print("ℹ️ Nessun nuovo prodotto MTM")
@@ -356,11 +368,11 @@ def check_mtm_monaco():
             for url in seen:
                 f.write(url + "\n")
 
-    return
+        return
 
-    added_titles = []              # <<< inizializza QUI
+    added_titles = []    # <<< inizializza QUI
 	
-	# ➡️ Ora cicliamo su ciascun account MTM
+    # ➡️ Ora cicliamo su ciascun account MTM
     for acct in MTM_ACCOUNTS:
         user, pwd = acct["user"], acct["pwd"]
         if not user or not pwd:
