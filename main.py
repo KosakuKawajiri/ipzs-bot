@@ -349,10 +349,15 @@ def check_mtm_monaco():
                  continue
              new_products.append((title, price, link))
              seen.add(link)
- 
+
     if not new_products:
-         print("ℹ️ Nessun nuovo prodotto, esco.")
-         return
+        print("ℹ️ Nessun nuovo prodotto MTM")
+
+        with open(MTM_SEEN_FILE, "w", encoding="utf-8") as f:
+            for url in seen:
+                f.write(url + "\n")
+
+    return
 
     added_titles = []              # <<< inizializza QUI
 	
