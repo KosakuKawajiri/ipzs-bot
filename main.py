@@ -304,13 +304,20 @@ def check_mtm_monaco():
     new_products = []
 	 
     # 1. prendo la homepage e tutte le categorie product/category
-    import time
-
     for i in range(3):
         try:
             response = requests.get(MTM_ROOT, timeout=20)
             homepage = BeautifulSoup(response.content, "html.parser")
+
+            # 🛡️ Controllo HTML valido
+            if not homepage.find_all("a"):
+                print("⚠️ MTM risposta vuota o sospetta")
+                time.sleep(3)
+                continue
+
+			
             break
+
         except Exception as e:
             print(f"⚠️ Tentativo {i+1} fallito MTM: {e}")
             time.sleep(3)
@@ -323,7 +330,7 @@ def check_mtm_monaco():
          if "product/category" in a["href"]
 	]
 	 
-     # 2. passo ciascuna categoria e prendo tutti i blocchi .product-thumb
+    # 2. passo ciascuna categoria e prendo tutti i blocchi .product-thumb
     for cat_url in cat_links:
          try:
              cat_page = BeautifulSoup(requests.get(cat_url, timeout=10).content, "html.parser")
@@ -344,7 +351,7 @@ def check_mtm_monaco():
              seen.add(link)
  
     if not new_products:
-         print("❌ Nessun nuovo prodotto, esco.")
+         print("ℹ️ Nessun nuovo prodotto, esco.")
          return
 
     added_titles = []              # <<< inizializza QUI
