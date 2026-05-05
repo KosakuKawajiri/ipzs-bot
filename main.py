@@ -303,13 +303,20 @@ def check_mtm_monaco():
     # --- costruisco new_products con il tuo scraping MTM Monaco ---
     new_products = []
 
+    headers = {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+    }
+
     # 1. prendo la homepage e tutte le categorie product/category
     for i in range(3):
         try:
-            headers = {
-                "User-Agent": "Mozilla/5.0"
-            }
-            response = requests.get(MTM_ROOT, timeout=20)
+            response = requests.get(MTM_ROOT, headers=headers, timeout=20)            
+
+            if response.status_code != 200:
+                print(f"⚠️ MTM status code anomalo: {response.status_code}")
+                time.sleep(3)
+                continue
+
             homepage = BeautifulSoup(response.content, "html.parser")
 
             # 🛡️ Controllo HTML valido
@@ -336,7 +343,7 @@ def check_mtm_monaco():
     for cat_url in cat_links:
 
         try:
-            response = requests.get(cat_url, timeout=10)
+            response = requests.get(cat_url, headers=headers, timeout=10)
             cat_page = BeautifulSoup(response.content, "html.parser")
         except Exception as e:
             print(f"⚠️ Errore categoria MTM: {e}")
@@ -359,7 +366,7 @@ def check_mtm_monaco():
 
             new_products.append((title, price, link))
             seen.add(link)
-                print(f"🆕 Nuovi prodotti trovati MTM: {len(new_products)}")
+    print(f"🆕 Nuovi prodotti trovati MTM: {len(new_products)}")
 
     if not new_products:
         print("ℹ️ Nessun nuovo prodotto MTM")
