@@ -310,11 +310,15 @@ def check_mtm_monaco():
             homepage = BeautifulSoup(response.content, "html.parser")
 
             # 🛡️ Controllo HTML valido
-            if not homepage.find_all("a"):
-                print("⚠️ MTM risposta vuota o sospetta")
+            cat_links = [
+                a["href"] for a in homepage.find_all("a", href=True)
+                if "product/category" in a["href"]
+            ]
+
+            if not cat_links:
+                print("⚠️ MTM pagina caricata ma nessuna categoria trovata (possibile blocco o errore)")
                 time.sleep(3)
                 continue
-
 			
             break
 
@@ -324,11 +328,6 @@ def check_mtm_monaco():
     else:
         print("❌ MTM non raggiungibile dopo 3 tentativi")
         return
-
-    cat_links = [
-         a["href"] for a in homepage.find_all("a", href=True)
-         if "product/category" in a["href"]
-    ]
 	 
     # 2. passo ciascuna categoria e prendo tutti i blocchi .product-thumb
     for cat_url in cat_links:
