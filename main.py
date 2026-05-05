@@ -328,7 +328,7 @@ def check_mtm_monaco():
     cat_links = [
          a["href"] for a in homepage.find_all("a", href=True)
          if "product/category" in a["href"]
-	]
+    ]
 	 
     # 2. passo ciascuna categoria e prendo tutti i blocchi .product-thumb
     for cat_url in cat_links:
