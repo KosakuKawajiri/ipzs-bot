@@ -366,6 +366,7 @@ def check_mtm_monaco():
 
             new_products.append((title, price, link))
             seen.add(link)
+
     print(f"🆕 Nuovi prodotti trovati MTM: {len(new_products)}")
 
     if not new_products:
@@ -377,43 +378,45 @@ def check_mtm_monaco():
 
         return
 
-    added_titles = []    # <<< inizializza QUI
-	
-    # ➡️ Ora cicliamo su ciascun account MTM
+    # 3. flash cart
+    added_titles = []
+
     for acct in MTM_ACCOUNTS:
         user, pwd = acct["user"], acct["pwd"]
+
         if not user or not pwd:
-            print(f"⚠️ Credenziali MTM mancanti per account {user!r}, salto.")
             continue
 
         print(f"🔐 Login MTM con account {user}")
         driver = setup_driver_headless()
-        logged = login_mtm(driver, username=user, password=pwd)
-        print(f"🔐 Login riuscito: {logged}")
-        if not logged:
+
+        if not login_mtm(driver, username=user, password=pwd):
             driver.quit()
             continue
 
         for title, price, link in new_products:
-            print(f"🛒 [{user}] aggiungo al carrello: {title}")
+            print(f"🛒 [{user}] aggiungo: {title}")
             ok = add_to_cart_and_checkout(driver, link)
-            print(f"👉 [{user}] Risultato: {'OK' if ok else 'Fallito'}")
+
             if ok:
                 added_titles.append(title)
+
             time.sleep(1)
 
-        driver.quit()  # chiudi il driver per questo account
+        driver.quit()
 
-    # una sola notifica, con tutte le monete aggiunte da entrambi gli account
+    # 4. notifica
     if added_titles:
         cart_url = "https://www.mtm-monaco.mc/index.php?route=checkout/cart"
-        msg = "<b>Flash monete Monaco!</b>\nSono state aggiunte al carrello:\n"
-        for t in added_titles:
-            msg += f"- {t}\n"
-        msg += f"\n➡️ <a href=\"{cart_url}\">Vai al checkout MTM Monaco</a>"
+
+        msg = "<b>Flash monete Monaco!</b>\n"
+        msg += "Sono state aggiunte:\n"
+        msg += "\n".join(f"- {t}" for t in added_titles)
+        msg += f"\n\n➡️ <a href=\"{cart_url}\">Checkout</a>"
+
         send(msg)
 
-    # infine aggiorna il file seen_mtm.txt
+    # 5. salva stato
     with open(MTM_SEEN_FILE, "w", encoding="utf-8") as f:
         for url in seen:
             f.write(url + "\n")
