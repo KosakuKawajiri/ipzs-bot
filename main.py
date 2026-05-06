@@ -4,6 +4,7 @@ from ipzs_flash import login_ipzs, add_to_cart_ipzs
 import requests, re, os, json, time
 from bs4 import BeautifulSoup
 from datetime import datetime, timedelta
+from concurrent.futures import ThreadPoolExecutor
 
 # ──────────────── MTM Credentials
 MTM_ACCOUNTS = [
@@ -340,16 +341,19 @@ def check_mtm_monaco():
         return
 	 
     # 2. passo ciascuna categoria e prendo tutti i blocchi .product-thumb
-    for cat_url in cat_links:
-
+    def fetch_category(cat_url):
         try:
             response = requests.get(cat_url, headers=headers, timeout=10)
-            cat_page = BeautifulSoup(response.content, "html.parser")
-        except Exception as e:
-            print(f"⚠️ Errore categoria MTM: {e}")
-            continue
+            soup = BeautifulSoup(response.content, "html.parser")
+            return soup.select(".product-thumb")
+        except:
+            return []
 
-        for block in cat_page.select(".product-thumb"):
+    with ThreadPoolExecutor(max_workers=5) as executor:
+        results = executor.map(fetch_category, cat_links)
+
+    for blocks in results:
+        for block in blocks:
             a_tag = block.find("a", href=True)
             title_tag = block.select_one("h4")
             price_tag = block.select_one(".price")
@@ -359,6 +363,9 @@ def check_mtm_monaco():
 
             link  = a_tag["href"]
             title = title_tag.get_text(strip=True)
+            # 🎯 PRE-FILTRO (personalizzabile, inserire nell'elenco le parole chiave di interesse)
+            if not any(k in title.upper() for k in ["PROOF", "BE", "ORO", "ARGENTO", "2 EURO", "FS", "LIMITED"]):
+                continue
             price = price_tag.get_text(strip=True) if price_tag else "N/D"
 
             if link in seen:
