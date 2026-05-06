@@ -349,7 +349,7 @@ def check_mtm_monaco():
         except:
             return []
 
-    with ThreadPoolExecutor(max_workers=5) as executor:
+    with ThreadPoolExecutor(max_workers=8) as executor:
         results = executor.map(fetch_category, cat_links)
 
     for blocks in results:
@@ -363,9 +363,11 @@ def check_mtm_monaco():
 
             link  = a_tag["href"]
             title = title_tag.get_text(strip=True)
+            
             # 🎯 PRE-FILTRO (personalizzabile, inserire nell'elenco le parole chiave di interesse)
             if not any(k in title.upper() for k in ["PROOF", "BE", "ORO", "ARGENTO", "2 EURO", "FS", "LIMITED"]):
                 continue
+                
             price = price_tag.get_text(strip=True) if price_tag else "N/D"
 
             if link in seen:
@@ -374,18 +376,14 @@ def check_mtm_monaco():
             new_products.append((title, price, link))
             seen.add(link)
 
+            print(f"⚡ TARGET: {title} - STOP anticipato, trovata moneta interessante")
+
+            # 🚀 STOP anticipato
+            return handle_mtm_checkout(new_products, seen)
+        
+def handle_mtm_checkout(new_products, seen):
     print(f"🆕 Nuovi prodotti trovati MTM: {len(new_products)}")
 
-    if not new_products:
-        print("ℹ️ Nessun nuovo prodotto MTM")
-
-        with open(MTM_SEEN_FILE, "w", encoding="utf-8") as f:
-            for url in seen:
-                f.write(url + "\n")
-
-        return
-
-    # 3. flash cart
     added_titles = []
 
     for acct in MTM_ACCOUNTS:
@@ -412,7 +410,6 @@ def check_mtm_monaco():
 
         driver.quit()
 
-    # 4. notifica
     if added_titles:
         cart_url = "https://www.mtm-monaco.mc/index.php?route=checkout/cart"
 
@@ -423,7 +420,9 @@ def check_mtm_monaco():
 
         send(msg)
 
-    # 5. salva stato
+    if not added_titles:
+        print("ℹ️ Nessun prodotto interessante MTM")
+    
     with open(MTM_SEEN_FILE, "w", encoding="utf-8") as f:
         for url in seen:
             f.write(url + "\n")
@@ -441,12 +440,23 @@ def main():
     if spider_allowed():
         links.update(spider(CATEGORY_URLS))
 
+    def safe_scrape(url):
+        try:
+            return scrape_ipzs(url)
+        except:
+            return None
+
+    from concurrent.futures import ThreadPoolExecutor, as_completed
+
     prods = []
-    for l in links:
-        p = scrape_ipzs(l)
-        if p:
-            prods.append(p)
-        time.sleep(0.15)
+
+    with ThreadPoolExecutor(max_workers=6) as executor:
+        futures = [executor.submit(safe_scrape, url) for url in links]
+
+        for future in as_completed(futures):
+            p = future.result()
+            if p:
+                prods.append(p)
 
     # 2️⃣ notifiche IPZS
     seen    = notify_new(prods, seen)
