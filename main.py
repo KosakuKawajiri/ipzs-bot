@@ -74,12 +74,18 @@ def get_links(url):
 
 def scrape_ipzs(url):
     try:
-        soup = BeautifulSoup(requests.get(url, timeout=10).content, "html.parser")
+        r = requests.get(url, timeout=10)
+        if r.status_code != 200:
+            return None
+        soup = BeautifulSoup(r.content, "html.parser")
     except:
         return None
 
     info = {"link": url}
-    info["nome"] = soup.select_one("h1.page-title span.base").get_text(strip=True)
+    title_el = soup.select_one("h1.page-title span.base")
+    if not title_el:
+        return None
+    info["nome"] = title_el.get_text(strip=True)
     pr = soup.select_one("span.price")
     info["prezzo"] = pr.get_text(strip=True) if pr else "N/A"
 
@@ -184,7 +190,7 @@ def spider_allowed():
     if n.hour not in SPIDER_HOURS: return False
     lock = lj(SPIDER_LOCK)
     last = lock.get("ts")
-    if last and (n - datetime.fromisoformat(last)).seconds<3600: return False
+    if last and (n - datetime.fromisoformat(last)).total_seconds<3600: return False
     sj(SPIDER_LOCK,{"ts":n.isoformat()})
     return True
 
@@ -321,11 +327,11 @@ def check_mtm_monaco():
             homepage = BeautifulSoup(response.content, "html.parser")
 
             # 🛡️ Controllo HTML valido
-            cat_links = [
+            cat_links = list(set(
                 a["href"] for a in homepage.find_all("a", href=True)
                 if "product/category" in a["href"]
-            ]
-
+            ))
+            
             if not cat_links:
                 print("⚠️ MTM pagina caricata ma nessuna categoria trovata (possibile blocco o errore)")
                 time.sleep(3)
@@ -349,37 +355,41 @@ def check_mtm_monaco():
         except:
             return []
 
+    from concurrent.futures import as_completed
+
     with ThreadPoolExecutor(max_workers=8) as executor:
-        results = executor.map(fetch_category, cat_links)
+        futures = [executor.submit(fetch_category, url) for url in cat_links]
 
-    for blocks in results:
-        for block in blocks:
-            a_tag = block.find("a", href=True)
-            title_tag = block.select_one("h4")
-            price_tag = block.select_one(".price")
+        for future in as_completed(futures):
+            blocks = future.result()
 
-            if not a_tag or not title_tag:
-                continue
+            for block in blocks:
+                a_tag = block.find("a", href=True)
+                title_tag = block.select_one("h4")
+                price_tag = block.select_one(".price")
 
-            link  = a_tag["href"]
-            title = title_tag.get_text(strip=True)
-            
-            # 🎯 PRE-FILTRO (personalizzabile, inserire nell'elenco le parole chiave di interesse)
-            if not any(k in title.upper() for k in ["PROOF", "BE", "ORO", "ARGENTO", "2 EURO", "FS", "LIMITED"]):
-                continue
-                
-            price = price_tag.get_text(strip=True) if price_tag else "N/D"
+                if not a_tag or not title_tag:
+                    continue
 
-            if link in seen:
-                continue
+                link  = a_tag["href"]
+                title = title_tag.get_text(strip=True)
 
-            new_products.append((title, price, link))
-            seen.add(link)
+                # 🎯 PRE-FILTRO # (personalizzabile, inserire nell'elenco le parole chiave di interesse)
+                if not any(k in title.upper() for k in ["PROOF", "BE", "ORO", "ARGENTO", "2 EURO", "FS", "LIMITED"]):
+                    continue
 
-            print(f"⚡ TARGET: {title} - STOP anticipato, trovata moneta interessante")
+                if link in seen:
+                    continue
 
-            # 🚀 STOP anticipato
-            return handle_mtm_checkout(new_products, seen)
+                price = price_tag.get_text(strip=True) if price_tag else "N/D"
+
+                new_products.append((title, price, link))
+                seen.add(link)
+
+                print(f"⚡ TARGET: {title} - STOP anticipato, trovata moneta interessante")
+
+                # 🚀 STOP anticipato
+                return handle_mtm_checkout(new_products, seen)
         
 def handle_mtm_checkout(new_products, seen):
     print(f"🆕 Nuovi prodotti trovati MTM: {len(new_products)}")
@@ -462,6 +472,7 @@ def main():
     seen    = notify_new(prods, seen)
     alerted = notify_low(prods, alerted)
     dates   = notify_dates(prods, dates)
+    flash_ipzs_cart(prods)
 
     # SALVA SUBITO
     sv(SEEN_FILE, seen)
