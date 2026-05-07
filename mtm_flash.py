@@ -33,7 +33,7 @@ def setup_driver_headless():
 
     # usa il chromedriver installato da apt-get
     service = Service("/usr/bin/chromedriver")
-    driver = webdriver.Chrome(service=service, options=chrome_options)
+    driver = webdriver.Chrome(service=service, options=options)
     return driver
 
 def login_mtm(driver, username=None, password=None):
