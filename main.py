@@ -4,7 +4,7 @@ from ipzs_flash import login_ipzs, add_to_cart_ipzs
 import requests, re, os, json, time
 from bs4 import BeautifulSoup
 from datetime import datetime, timedelta
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 # ──────────────── MTM Credentials
 MTM_ACCOUNTS = [
@@ -455,8 +455,6 @@ def main():
             return scrape_ipzs(url)
         except:
             return None
-
-    from concurrent.futures import ThreadPoolExecutor, as_completed
 
     prods = []
 
