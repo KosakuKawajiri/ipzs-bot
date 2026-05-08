@@ -30,7 +30,6 @@ def setup_driver_headless():
     options.page_load_strategy = "eager"
 
     # usa il chromedriver installato da apt-get
-    service = Service("/usr/bin/chromedriver")
     driver = webdriver.Chrome(service=service, options=options)
     return driver
 
