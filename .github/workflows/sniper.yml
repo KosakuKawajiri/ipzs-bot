@@ -18,7 +18,14 @@ jobs:
 
       - run: pip install -r requirements.txt
 
-      - run: python sniper_ipzs.py
+      - run: python sniper_ipzs.py------------------
+        env:
+            TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+            CHAT_ID: ${{ secrets.CHAT_ID }}
+            MTM_USERNAME: ${{ secrets.MTM_USERNAME }}
+            MTM_PASSWORD: ${{ secrets.MTM_PASSWORD }}
+            IPZS_USERNAME: ${{ secrets.IPZS_USERNAME }}
+            IPZS_PASSWORD: ${{ secrets.IPZS_PASSWORD }}
 
       - name: Commit sniper_seen
         run: |
