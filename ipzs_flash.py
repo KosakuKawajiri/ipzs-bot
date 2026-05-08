@@ -39,8 +39,8 @@ def login_ipzs(driver):
         return False
 
     # ─────────── Login ───────────
-    driver.find_element(By.ID, "email").send_keys(os.getenv("MTM_USERNAME"))
-    driver.find_element(By.ID, "passw").send_keys(os.getenv("MTM_PASSWORD"))
+    driver.find_element(By.ID, "email").send_keys(os.getenv("IPZS_USERNAME"))
+    driver.find_element(By.ID, "passw").send_keys(os.getenv("IPZS_PASSWORD"))
     driver.find_element(By.ID, "send3").click()
 
     time.sleep(3)
