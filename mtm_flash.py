@@ -11,26 +11,18 @@ from selenium.webdriver.chrome.options import Options
 MTM_SEEN_FILE = "seen_mtm.txt"
 
 def setup_driver_headless():
-    """
-    Configura un Chrome headless usando il chromedriver di sistema.
-    Ritorna un driver Selenium pronto all’uso.
-    """
-    from selenium.webdriver.chrome.options import Options
-
     options = Options()
+
     options.add_argument("--headless=new")
     options.add_argument("--disable-gpu")
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
-    options.add_argument("--no-sandbox")
     options.add_argument("--window-size=1920,1080")
-    options.add_argument("--disable-dev-shm-usage")
 
-    # ⚡ SUPER IMPORTANTE
     options.page_load_strategy = "eager"
 
-    # usa il chromedriver installato da apt-get
-    driver = webdriver.Chrome(service=service, options=options)
+    driver = webdriver.Chrome(options=options)
+
     return driver
 
 def login_mtm(driver, username=None, password=None):
@@ -121,38 +113,27 @@ def flash_purchase_mtm(product_url, username=None, password=None):
     - Crea driver headless
     - Esegue login
     - Aggiunge al carrello
-    - Lascia aperto il browser per eventuali interazioni manuali
     """
-    def setup_driver_headless():
-        options = Options()
+    driver = setup_driver_headless()
 
-        options.add_argument("--headless=new")
-        options.add_argument("--disable-gpu")
-        options.add_argument("--no-sandbox")
-        options.add_argument("--disable-dev-shm-usage")
-        options.add_argument("--window-size=1920,1080")
-
-        options.page_load_strategy = "eager"
-
-        driver = webdriver.Chrome(options=options)
-
-        return driver
     try:
         ok = login_mtm(driver, username=username, password=password)
+
         if not ok:
             return False
+
         success = add_to_cart_and_checkout(driver, product_url)
+
         if not success:
             return False
+
         return True
-        # A questo punto il carrello è pronto.
-        # Puoi, se vuoi, procedere al checkout automatico inserendo dati di spedizione.
-        # Ma almeno il carrello è popolato e puoi intervenire manualmente velocemente.
+
     except Exception as e:
         print("❌ Errore in flash_purchase_mtm:", e)
         return False
+
     finally:
-        # il finally assicura sempre il quit
         driver.quit()
 
 # ===== Esempio di utilizzo standalone =====
