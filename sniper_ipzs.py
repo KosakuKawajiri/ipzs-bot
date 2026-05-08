@@ -7,9 +7,9 @@ from datetime import datetime
 # riutilizziamo le tue funzioni già esistenti
 from main import send
 from ipzs_flash import login_ipzs, add_to_cart_ipzs
-from main import setup_driver_headless
+from mtm_flash import setup_driver_headless
 
-URL = "https://www.shop.ipzs.it/it/"
+URL = "https://www.shop.ipzs.it/it/catalog/category/view/s/monete/id/3/"
 
 SEEN_FILE = "sniper_seen.txt"
 
@@ -27,18 +27,42 @@ def save_seen(seen):
             f.write(url + "\n")
 
 
-def get_links():
-    headers = {"User-Agent": "Mozilla/5.0"}
-    r = requests.get(URL, headers=headers, timeout=10)
-    soup = BeautifulSoup(r.content, "html.parser")
+def get_links(retries=3):
+    headers = {
+        "User-Agent": "Mozilla/5.0"
+    }
 
-    links = set()
-    for a in soup.find_all("a", href=True):
-        href = a["href"]
-        if "/it/" in href and ".html" in href:
-            links.add(href)
+    for attempt in range(retries):
+        try:
+            r = requests.get(URL, headers=headers, timeout=10)
 
-    return links
+            if r.status_code != 200:
+                print(f"⚠️ Status code {r.status_code}")
+                time.sleep(2)
+                continue
+
+            soup = BeautifulSoup(r.content, "html.parser")
+
+            links = set()
+
+            for a in soup.select("a.product-item-link"):
+                href = a.get("href")
+
+                if not href:
+                    continue
+
+                href = href.split("?")[0].split("#")[0]
+
+                links.add(href)
+
+            return links
+
+        except requests.exceptions.RequestException as e:
+            print(f"⚠️ Tentativo {attempt+1}/{retries} fallito: {e}")
+            time.sleep(3)
+
+    print("❌ IPZS non raggiungibile")
+    return set()
 
 
 def flash_product(link):
@@ -67,12 +91,22 @@ def main():
     seen = load_seen()
     current_links = get_links()
 
+    if not current_links:
+        print("⚠️ Nessun link ottenuto")
+        return
+
     new_links = current_links - seen
 
     print(f"🔍 Nuovi link trovati: {len(new_links)}")
 
+    driver = setup_driver_headless()
+
+    login_ipzs(driver)
+
     for link in new_links:
-        flash_product(link)
+        add_to_cart_ipzs(driver, link)
+
+    driver.quit()
 
     seen.update(current_links)
     save_seen(seen)
