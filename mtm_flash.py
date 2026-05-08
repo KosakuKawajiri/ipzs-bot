@@ -3,9 +3,7 @@ import os
 import time
 from selenium import webdriver
 from selenium.webdriver.common.by import By
-from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
-from webdriver_manager.chrome import ChromeDriverManager
 
 
 # ─────────────── Login e carrello MTM Monaco
@@ -75,7 +73,13 @@ def login_mtm(driver, username=None, password=None):
     # verifica riuscita del login controllando il titolo della pagina
     title = driver.title.lower()
     print(f"🏷️ Titolo pagina dopo login: {driver.title!r}")
-    if "votre compte" in title or "mon compte" in title or "logout" in src.lower():
+    page_source = driver.page_source.lower()
+
+    if (
+        "votre compte" in title
+        or "mon compte" in title
+        or "logout" in page_source
+    ):
         print("✅ Login MTM riuscito.")
         return True
     else:
@@ -120,7 +124,20 @@ def flash_purchase_mtm(product_url, username=None, password=None):
     - Aggiunge al carrello
     - Lascia aperto il browser per eventuali interazioni manuali
     """
-    driver = setup_driver_headless()
+    def setup_driver_headless():
+        options = Options()
+
+        options.add_argument("--headless=new")
+        options.add_argument("--disable-gpu")
+        options.add_argument("--no-sandbox")
+        options.add_argument("--disable-dev-shm-usage")
+        options.add_argument("--window-size=1920,1080")
+
+        options.page_load_strategy = "eager"
+
+        driver = webdriver.Chrome(options=options)
+
+        return driver
     try:
         ok = login_mtm(driver, username=username, password=password)
         if not ok:
