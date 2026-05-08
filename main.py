@@ -276,7 +276,7 @@ def flash_ipzs_cart(products):
         else:
             print("     → saltato (flash già fatto meno di 30 giorni fa)")
 
-        time.sleep(1)
+        time.sleep(0.3)
 
     driver.quit()
 
