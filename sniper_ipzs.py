@@ -80,7 +80,10 @@ def main():
 
     driver = setup_driver_headless()
 
-    login_ipzs(driver)
+    if not login_ipzs(driver):
+        print("❌ Login IPZS fallito")
+        driver.quit()
+        return
 
     for link in new_links:
         add_to_cart_ipzs(driver, link)
