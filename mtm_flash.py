@@ -7,9 +7,6 @@ from selenium.webdriver.chrome.options import Options
 
 
 # ─────────────── Login e carrello MTM Monaco
-
-MTM_SEEN_FILE = "seen_mtm.txt"
-
 def setup_driver_headless():
     options = Options()
 
