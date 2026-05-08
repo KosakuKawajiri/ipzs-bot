@@ -190,7 +190,7 @@ def spider_allowed():
     if n.hour not in SPIDER_HOURS: return False
     lock = lj(SPIDER_LOCK)
     last = lock.get("ts")
-    if last and (n - datetime.fromisoformat(last)).total_seconds<3600: return False
+    if last and (n - datetime.fromisoformat(last)).total_seconds() < 3600: return False
     sj(SPIDER_LOCK,{"ts":n.isoformat()})
     return True
 
