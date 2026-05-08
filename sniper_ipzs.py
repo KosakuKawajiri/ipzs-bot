@@ -64,27 +64,6 @@ def get_links(retries=3):
     print("❌ IPZS non raggiungibile")
     return set()
 
-
-def flash_product(link):
-    print(f"🔥 NUOVO LINK → FLASH: {link}")
-
-    driver = setup_driver_headless()
-
-    if not login_ipzs(driver):
-        print("❌ Login fallito")
-        driver.quit()
-        return
-
-    ok = add_to_cart_ipzs(driver, link)
-
-    if ok:
-        send(f"🚀 SNIPER: aggiunta al carrello!\n{link}")
-    else:
-        send(f"⚠️ SNIPER fallito:\n{link}")
-
-    driver.quit()
-
-
 def main():
     print("🚀 SNIPER START", datetime.now())
 
