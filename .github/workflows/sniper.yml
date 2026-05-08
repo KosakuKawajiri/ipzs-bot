@@ -26,4 +26,4 @@ jobs:
           git config --global user.email "bot@github.com"
           git add sniper_seen.txt
           git commit -m "update sniper seen" || echo "no changes"
-          git push
+          git push || echo "push fallito"
