@@ -1,9 +1,7 @@
 from main import (
     get_links,
     scrape_ipzs,
-    parse_tiratura,
     CATEGORY_URLS,
-    IPZS_FLASH,
     flash_ipzs_cart
 )
 
