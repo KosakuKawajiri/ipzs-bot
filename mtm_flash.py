@@ -4,6 +4,7 @@ import time
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.chrome.service import Service
 
 
 # ─────────────── Login e carrello MTM Monaco
@@ -17,9 +18,16 @@ def setup_driver_headless():
     options.add_argument("--window-size=1920,1080")
     options.add_argument("--disable-blink-features=AutomationControlled")
 
+    options.binary_location = "/usr/bin/chromium-browser"
+
     options.page_load_strategy = "eager"
 
-    driver = webdriver.Chrome(options=options)
+    service = Service()
+
+    driver = webdriver.Chrome(
+        service=service,
+        options=options
+    )
 
     return driver
 
