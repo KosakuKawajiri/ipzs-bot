@@ -6,7 +6,7 @@ from datetime import datetime
 
 # riutilizziamo le tue funzioni già esistenti
 from utils import send
-from ipzs_flash import login_ipzs, add_to_cart_ipzs
+from ipzs_flash import login_ipzs
 from mtm_flash import setup_driver_headless
 
 URL = "https://www.shop.ipzs.it/it/catalog/category/view/s/monete/id/3/"
@@ -33,6 +33,8 @@ def get_links(retries=3):
         "User-Agent": "Mozilla/5.0"
     }
 
+    session = requests.Session()
+    
     for attempt in range(retries):
         try:
             r = requests.get(URL, headers=headers, timeout=10)
@@ -71,56 +73,144 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException
 
-def is_product_available(driver, url):
-
-    try:
-        driver.get(url)
-
-        WebDriverWait
-
-        html = driver.page_source.upper()
-
-        if "NON DISPONIBILE" in html:
-            return False
-
-        buttons = driver.find_elements(By.ID, "product-addtocart-button")
-
-        if buttons:
-            return True
-
-        return False
-
-    except Exception as e:
-        print(f"⚠️ Selenium availability check error: {e}")
-        return False
-
-def smart_add_to_cart(driver, link, retries=3):
+def sniper_check_and_cart(driver, url, retries=3):
 
     for attempt in range(1, retries + 1):
 
-        print(f"🛒 Tentativo add-to-cart #{attempt}")
+        print(f"🔎 Tentativo sniper #{attempt}: {url}")
 
         try:
 
-            ok = add_to_cart_ipzs(driver, link)
+            driver.get(url)
 
-            if ok:
-                print("✅ Add-to-cart riuscito")
-                return True
+            # ───────── Queue-it detection
+            if "queue-it" in driver.current_url.lower():
+
+                print("⏳ Queue-it rilevato")
+
+                try:
+                    WebDriverWait(driver, 120).until(
+                        lambda d: "queue-it" not in d.current_url.lower()
+                    )
+
+                    print("✅ Uscito da Queue-it")
+
+                    driver.get(url)
+
+                except TimeoutException:
+                    print("❌ Timeout Queue-it")
+                    return "CART_FAILED"
+
+            # ───────── Attesa render pagina
+            WebDriverWait(driver, 5).until(
+                EC.presence_of_element_located((By.TAG_NAME, "body"))
+            )
+
+            html = driver.page_source.upper()
+
+            # ───────── Disponibilità negativa
+            if "NON DISPONIBILE" in html:
+                print("❌ Prodotto NON DISPONIBILE")
+                return "NOT_AVAILABLE"
+
+            # ───────── Cerca bottone add-to-cart
+            buttons = driver.find_elements(By.ID, "product-addtocart-button")
+
+            if not buttons:
+                print("⚠️ Bottone add-to-cart non trovato")
+
+                # retry intelligente
+                if attempt < retries:
+
+                    wait_time = attempt * 2
+
+                    print(f"⏳ Retry tra {wait_time}s")
+
+                    time.sleep(wait_time)
+
+                    continue
+
+                return False
+
+            # ───────── Set quantità
+            try:
+
+                qty = driver.find_element(By.ID, "qty")
+
+                qty.clear()
+
+                qty.send_keys("1")
+
+            except Exception as e:
+                print(f"⚠️ Campo qty non trovato: {e}")
+
+            # ───────── Click add-to-cart
+            try:
+
+                buttons[0].click()
+
+            except Exception as e:
+
+                print(f"⚠️ Click fallito: {e}")
+
+                if attempt < retries:
+
+                    wait_time = attempt * 2
+
+                    print(f"⏳ Retry click tra {wait_time}s")
+
+                    time.sleep(wait_time)
+
+                    continue
+
+                return "CART_FAILED"
+
+            # ───────── Verifica successo
+            try:
+
+                WebDriverWait(driver, 8).until(
+                    lambda d:
+                        "/checkout/cart" in d.current_url
+                        or len(d.find_elements(By.CSS_SELECTOR, ".message-success")) > 0
+                )
+
+                print("✅ ADD-TO-CART RIUSCITO")
+
+                return "AVAILABLE"
+
+            except TimeoutException:
+
+                print("⚠️ Nessuna conferma add-to-cart")
+
+                if attempt < retries:
+
+                    wait_time = attempt * 2
+
+                    print(f"⏳ Retry conferma tra {wait_time}s")
+
+                    time.sleep(wait_time)
+
+                    continue
+
+                return "CART_FAILED"
 
         except Exception as e:
-            print(f"⚠️ Errore add-to-cart: {e}")
 
-        # backoff progressivo
-        wait_time = attempt * 2
+            print(f"⚠️ Errore sniper globale: {e}")
 
-        print(f"⏳ Attendo {wait_time}s prima del retry")
+            if attempt < retries:
 
-        time.sleep(wait_time)
+                wait_time = attempt * 2
 
-    print("❌ Tutti i tentativi add-to-cart falliti")
+                print(f"⏳ Retry globale tra {wait_time}s")
 
-    return False
+                time.sleep(wait_time)
+
+                continue
+
+            return "CART_FAILED"
+
+    return "NOT_AVAILABLE"
 
 def main():
     print("🚀 SNIPER START", datetime.now())
@@ -143,26 +233,46 @@ def main():
 
     for link in current_links:
 
-        available = is_product_available(driver, link)
-
         old_status = seen.get(link)
 
-        # trigger SOLO quando passa a disponibile
-        if available and old_status != "AVAILABLE":
+        # trigger SOLO se prima NON disponibile
+        if old_status != "AVAILABLE":
 
-            print(f"🚨 Disponibile ORA: {link}")
+            print(f"🚨 Controllo sniper: {link}")
 
-            ok = smart_add_to_cart(driver, link)
+            status = sniper_check_and_cart(driver, link)
 
-            if ok:
+            if status == "AVAILABLE":
+
                 triggered.append(link)
+
+                seen[link] = "AVAILABLE"
+
                 send(
                     f"<b>SNIPER IPZS</b>\n"
                     f"Moneta disponibile intercettata!\n\n"
                     f"{link}"
                 )
 
-        seen[link] = "AVAILABLE" if available else "NOT_AVAILABLE"
+            elif status == "NOT_AVAILABLE":
+
+                seen[link] = "NOT_AVAILABLE"
+
+            elif status == "CART_FAILED":
+
+                print("⚠️ Cart fallito ma prodotto disponibile")
+
+                seen[link] = "AVAILABLE"
+
+                send(
+                    f"<b>SNIPER IPZS</b>\n"
+                    f"Prodotto disponibile ma add-to-cart FALLITO\n\n"
+                    f"{link}"
+                )
+
+        else:
+
+            print(f"ℹ️ Già disponibile in precedenza: {link}")
 
     driver.quit()
 
