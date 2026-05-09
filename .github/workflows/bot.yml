@@ -54,3 +54,4 @@ jobs:
           git add seen.txt low_mintage_alerts.txt date_alerts.json last_spider.json ipzs_flash_log.json || true
           git diff --cached --quiet || git commit -m "Aggiornamento automatico file di stato"
           git push || echo "Push non necessario o non riuscito"   
+          git add cookies_ipzs.pkl
