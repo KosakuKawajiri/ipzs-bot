@@ -3,10 +3,11 @@ from bs4 import BeautifulSoup
 import time
 import os
 from datetime import datetime
+import pickle
 
 # riutilizziamo le tue funzioni già esistenti
 from utils import send
-from ipzs_flash import login_ipzs
+from ipzs_flash import login_ipzs, load_cookies
 from mtm_flash import setup_driver_headless
 
 URL = "https://www.shop.ipzs.it/it/catalog/category/view/s/monete/id/3/"
@@ -224,10 +225,71 @@ def main():
     
     driver = setup_driver_headless()
 
-    if not login_ipzs(driver):
+    logged = False
+
+    # prova cookie
+    if load_cookies(driver):
+
+        driver.get("https://www.shop.ipzs.it/it/customer/account/")
+
+        if "/customer/account/" in driver.current_url:
+            print("✅ Sessione IPZS ripristinata via cookie")
+            logged = True
+
+    # fallback login classico
+    if not logged:
+        print("🔐 Sessione non valida → login classico")
+        logged = login_ipzs(driver)
+
+    if not logged:
         print("❌ Login IPZS fallito")
         driver.quit()
         return
+    
+    save_cookies(driver)
+
+    COOKIE_FILE = "cookies_ipzs.pkl"
+
+    def save_cookies(driver):
+
+        with open(COOKIE_FILE, "wb") as file:
+
+            pickle.dump(driver.get_cookies(), file)
+
+        print("🍪 Cookie IPZS salvati")
+
+    def load_cookies(driver):
+
+        if not os.path.exists(COOKIE_FILE):
+
+            return False
+
+        try:
+
+            driver.get("https://www.shop.ipzs.it")
+
+            with open(COOKIE_FILE, "rb") as file:
+
+                cookies = pickle.load(file)
+
+            for cookie in cookies:
+
+                try:
+                    driver.add_cookie(cookie)
+                except:
+                    pass
+
+            driver.refresh()
+
+            print("🍪 Cookie caricati")
+
+            return True
+
+        except Exception as e:
+
+            print(f"⚠️ Errore load cookies: {e}")
+
+            return False
 
     triggered = []
 
