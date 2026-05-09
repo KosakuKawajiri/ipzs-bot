@@ -34,21 +34,7 @@ DOMAIN = "www.shop.ipzs.it"
 MTM_ROOT   = "https://www.mtm-monaco.mc/index.php?route=common/home"
 
 # ──────────────── Telegram helper
-def send(text: str) -> bool:
-    token = os.getenv("TELEGRAM_TOKEN")
-    chat  = os.getenv("CHAT_ID")
-    if not token or not chat:
-        return False
-    try:
-        r = requests.post(
-            f"https://api.telegram.org/bot{token}/sendMessage",
-            data={"chat_id": chat, "text": text, "parse_mode": "HTML"},
-            timeout=10
-        )
-        r.raise_for_status()
-        return True
-    except:
-        return False
+from utils import send
 
 # ──────────────── File helpers
 def ld(fp): return set(open(fp, encoding="utf-8").read().splitlines()) if os.path.exists(fp) else set()
