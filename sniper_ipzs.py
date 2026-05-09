@@ -30,10 +30,12 @@ def save_seen(seen):
     with open(SEEN_FILE, "w", encoding="utf-8") as f:
         json.dump(seen, f, indent=2)
 
+
 def save_cookies(driver):
     with open(COOKIE_FILE, "wb") as file:
         pickle.dump(driver.get_cookies(), file)
     print("🍪 Cookie IPZS salvati")
+
 
 def load_cookies(driver):
     if not os.path.exists(COOKIE_FILE):
@@ -57,6 +59,39 @@ def load_cookies(driver):
     except Exception as e:
         print(f"⚠️ Errore load cookies: {e}")
         return False
+
+def warm_session(driver):
+    try:
+        warm_pages = [
+            "https://www.shop.ipzs.it/it/",
+            "https://www.shop.ipzs.it/it/customer/account/",
+            URL
+        ]
+        
+        for page in warm_pages:
+            print(f"🔥 Warm session: {page}")
+
+            driver.get(page)
+
+            if "queue-it" in driver.current_url.lower():
+                print("⏳ Queue-it durante warm session")
+                WebDriverWait(driver, 120).until(
+                    lambda d: "queue-it" not in d.current_url.lower()
+                )
+
+            WebDriverWait(driver, 5).until(
+                EC.presence_of_element_located((By.TAG_NAME, "body"))
+            )
+
+            time.sleep(1)
+
+        print("✅ Sessione riscaldata")
+        return True
+    except Exception as e:
+
+        print(f"⚠️ Warm session failed: {e}")
+        return False
+
 
 def get_links(retries=3):
     headers = {
@@ -94,6 +129,7 @@ def get_links(retries=3):
 
     print("❌ IPZS non raggiungibile")
     return set()
+
 
 # Effettiva disponibilità prodotto - check con Selenium
 from selenium.webdriver.common.by import By
@@ -240,6 +276,7 @@ def sniper_check_and_cart(driver, url, retries=3):
 
     return "NOT_AVAILABLE"
 
+
 def main():
     print("🚀 SNIPER START", datetime.now())
 
@@ -259,7 +296,10 @@ def main():
 
         driver.get("https://www.shop.ipzs.it/it/customer/account/")
 
-        if "customer/account" in driver.current_url.lower():
+        if (
+            "customer/account" in driver.current_url.lower()
+            and "login" not in driver.current_url.lower()
+        ):
             print("✅ Sessione IPZS ripristinata via cookie")
             logged = True
 
@@ -272,6 +312,9 @@ def main():
         print("❌ Login IPZS fallito")
         driver.quit()
         return
+
+    warm_session(driver)
+    save_cookies(driver)
 
     triggered = []
 
