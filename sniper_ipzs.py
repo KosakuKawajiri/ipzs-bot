@@ -95,11 +95,7 @@ def main():
     if not current_links:
         print("⚠️ Nessun link ottenuto")
         return
-
-    new_links = current_links - seen
-
-    print(f"🔍 Nuovi link trovati: {len(new_links)}")
-
+    ----
     driver = setup_driver_headless()
 
     if not login_ipzs(driver):
@@ -107,13 +103,31 @@ def main():
         driver.quit()
         return
 
-    for link in new_links:
-        add_to_cart_ipzs(driver, link)
+    triggered = []
+
+    for link in current_links:
+
+        available = is_product_available(link)
+
+        old_status = seen.get(link)
+
+        # trigger SOLO quando passa a disponibile
+        if available and old_status != "AVAILABLE":
+
+            print(f"🚨 Disponibile ORA: {link}")
+
+            ok = add_to_cart_ipzs(driver, link)
+
+            if ok:
+                triggered.append(link)
+
+        seen[link] = "AVAILABLE" if available else "NOT_AVAILABLE"
 
     driver.quit()
 
-    seen.update(current_links)
     save_seen(seen)
+
+    print(f"✅ Trigger effettuati: {len(triggered)}")
 
     print("✅ SNIPER END", datetime.now())
 
