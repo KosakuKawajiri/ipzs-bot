@@ -65,25 +65,30 @@ def get_links(retries=3):
     print("❌ IPZS non raggiungibile")
     return set()
 
-def is_product_available(url):
+# Effettiva disponibilità prodotto - check con Selenium
+from selenium.webdriver.common.by import By
+
+def is_product_available(driver, url):
+
     try:
-        r = requests.get(url, timeout=10)
+        driver.get(url)
 
-        if r.status_code != 200:
-            return False
+        time.sleep(1)
 
-        html = r.text.upper()
+        html = driver.page_source.upper()
 
         if "NON DISPONIBILE" in html:
             return False
 
-        if "PRODUCT-ADDTOCART-BUTTON" in html:
+        buttons = driver.find_elements(By.ID, "product-addtocart-button")
+
+        if buttons:
             return True
 
         return False
 
     except Exception as e:
-        print(f"⚠️ Errore availability check: {e}")
+        print(f"⚠️ Selenium availability check error: {e}")
         return False
 
 def main():
@@ -107,7 +112,7 @@ def main():
 
     for link in current_links:
 
-        available = is_product_available(link)
+        available = is_product_available(driver, link)
 
         old_status = seen.get(link)
 
