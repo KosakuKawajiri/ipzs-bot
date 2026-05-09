@@ -6,6 +6,8 @@ from selenium.webdriver.support import expected_conditions as EC
 
 # ─────────── Login IPZS ───────────
 def login_ipzs(driver):
+    from selenium.webdriver.support.ui import WebDriverWait
+    from selenium.webdriver.support import expected_conditions as EC
     login_url = "https://www.shop.ipzs.it/it/customer/account/login/"
     driver.get(login_url)
 
@@ -22,6 +24,7 @@ def login_ipzs(driver):
             print(f"✅ Uscito dalla coda. Nuovo URL: {driver.current_url}")
 
             driver.get(login_url)
+            time.sleep(2)
             print(f"🔁 Riapro login page: {driver.current_url}")
 
         except Exception as e:
@@ -39,10 +42,17 @@ def login_ipzs(driver):
         return False
 
     # ─────────── Login ───────────
-    driver.find_element(By.ID, "email").send_keys(os.getenv("IPZS_USERNAME"))
-    driver.find_element(By.ID, "passw").send_keys(os.getenv("IPZS_PASSWORD"))
+    #driver.find_element(By.ID, "email").send_keys(os.getenv("IPZS_USERNAME"))
+    #driver.find_element(By.ID, "passw").send_keys(os.getenv("IPZS_PASSWORD"))
     driver.find_element(By.ID, "send3").click()
-
+    
+    email_input = WebDriverWait(driver, 20).until(
+        EC.presence_of_element_located((By.ID, "email"))
+    )
+    password_input = WebDriverWait(driver, 20).until(
+        EC.presence_of_element_located((By.ID, "passw"))
+    )
+    
     time.sleep(3)
 
     if "queue-it" in driver.current_url.lower():
