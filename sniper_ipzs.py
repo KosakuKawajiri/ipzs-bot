@@ -7,12 +7,13 @@ import pickle
 
 # riutilizziamo le tue funzioni già esistenti
 from utils import send
-from ipzs_flash import login_ipzs, load_cookies
+from ipzs_flash import login_ipzs
 from mtm_flash import setup_driver_headless
 
 URL = "https://www.shop.ipzs.it/it/catalog/category/view/s/monete/id/3/"
 
 SEEN_FILE = "sniper_seen.json"
+COOKIE_FILE = "cookies_ipzs.pkl"
 
 import json
 
@@ -29,12 +30,38 @@ def save_seen(seen):
     with open(SEEN_FILE, "w", encoding="utf-8") as f:
         json.dump(seen, f, indent=2)
 
+def save_cookies(driver):
+    with open(COOKIE_FILE, "wb") as file:
+        pickle.dump(driver.get_cookies(), file)
+    print("🍪 Cookie IPZS salvati")
+
+def load_cookies(driver):
+    if not os.path.exists(COOKIE_FILE):
+        return False
+    try:
+        driver.get("https://www.shop.ipzs.it")
+        with open(COOKIE_FILE, "rb") as file:
+
+            cookies = pickle.load(file)
+
+        for cookie in cookies:
+            try:
+                driver.add_cookie(cookie)
+            except:
+                pass
+
+        driver.refresh()
+        print("🍪 Cookie caricati")
+        return True
+
+    except Exception as e:
+        print(f"⚠️ Errore load cookies: {e}")
+        return False
+
 def get_links(retries=3):
     headers = {
         "User-Agent": "Mozilla/5.0"
     }
-
-    session = requests.Session()
     
     for attempt in range(retries):
         try:
@@ -131,7 +158,7 @@ def sniper_check_and_cart(driver, url, retries=3):
 
                     continue
 
-                return False
+                return "CART_FAILED"
 
             # ───────── Set quantità
             try:
@@ -232,7 +259,7 @@ def main():
 
         driver.get("https://www.shop.ipzs.it/it/customer/account/")
 
-        if "/customer/account/" in driver.current_url:
+        if "customer/account" in driver.current_url.lower():
             print("✅ Sessione IPZS ripristinata via cookie")
             logged = True
 
@@ -245,51 +272,6 @@ def main():
         print("❌ Login IPZS fallito")
         driver.quit()
         return
-    
-    save_cookies(driver)
-
-    COOKIE_FILE = "cookies_ipzs.pkl"
-
-    def save_cookies(driver):
-
-        with open(COOKIE_FILE, "wb") as file:
-
-            pickle.dump(driver.get_cookies(), file)
-
-        print("🍪 Cookie IPZS salvati")
-
-    def load_cookies(driver):
-
-        if not os.path.exists(COOKIE_FILE):
-
-            return False
-
-        try:
-
-            driver.get("https://www.shop.ipzs.it")
-
-            with open(COOKIE_FILE, "rb") as file:
-
-                cookies = pickle.load(file)
-
-            for cookie in cookies:
-
-                try:
-                    driver.add_cookie(cookie)
-                except:
-                    pass
-
-            driver.refresh()
-
-            print("🍪 Cookie caricati")
-
-            return True
-
-        except Exception as e:
-
-            print(f"⚠️ Errore load cookies: {e}")
-
-            return False
 
     triggered = []
 
@@ -298,7 +280,7 @@ def main():
         old_status = seen.get(link)
 
         # trigger SOLO se prima NON disponibile
-        if old_status != "AVAILABLE":
+        if old_status != "AVAILABLE_CARTED":
 
             print(f"🚨 Controllo sniper: {link}")
 
@@ -308,7 +290,9 @@ def main():
 
                 triggered.append(link)
 
-                seen[link] = "AVAILABLE"
+                seen[link] = "AVAILABLE_CARTED"
+
+                save_cookies(driver)
 
                 send(
                     f"<b>SNIPER IPZS</b>\n"
@@ -324,7 +308,7 @@ def main():
 
                 print("⚠️ Cart fallito ma prodotto disponibile")
 
-                seen[link] = "AVAILABLE"
+                seen[link] = "CART_FAILED"
 
                 send(
                     f"<b>SNIPER IPZS</b>\n"
