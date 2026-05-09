@@ -95,7 +95,7 @@ def main():
     if not current_links:
         print("⚠️ Nessun link ottenuto")
         return
-    ----
+    
     driver = setup_driver_headless()
 
     if not login_ipzs(driver):
