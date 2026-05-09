@@ -5,7 +5,7 @@ import os
 from datetime import datetime
 
 # riutilizziamo le tue funzioni già esistenti
-from main import send
+from utils import send
 from ipzs_flash import login_ipzs, add_to_cart_ipzs
 from mtm_flash import setup_driver_headless
 
