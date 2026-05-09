@@ -11,21 +11,22 @@ from mtm_flash import setup_driver_headless
 
 URL = "https://www.shop.ipzs.it/it/catalog/category/view/s/monete/id/3/"
 
-SEEN_FILE = "sniper_seen.txt"
+SEEN_FILE = "sniper_seen.json"
 
+import json
 
 def load_seen():
     if not os.path.exists(SEEN_FILE):
-        return set()
-    with open(SEEN_FILE, "r") as f:
-        return {line.strip() for line in f}
-
+        return {}
+    try:
+        with open(SEEN_FILE, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except:
+        return {}
 
 def save_seen(seen):
-    with open(SEEN_FILE, "w") as f:
-        for url in seen:
-            f.write(url + "\n")
-
+    with open(SEEN_FILE, "w", encoding="utf-8") as f:
+        json.dump(seen, f, indent=2)
 
 def get_links(retries=3):
     headers = {
@@ -63,6 +64,27 @@ def get_links(retries=3):
 
     print("❌ IPZS non raggiungibile")
     return set()
+
+def is_product_available(url):
+    try:
+        r = requests.get(url, timeout=10)
+
+        if r.status_code != 200:
+            return False
+
+        html = r.text.upper()
+
+        if "NON DISPONIBILE" in html:
+            return False
+
+        if "PRODUCT-ADDTOCART-BUTTON" in html:
+            return True
+
+        return False
+
+    except Exception as e:
+        print(f"⚠️ Errore availability check: {e}")
+        return False
 
 def main():
     print("🚀 SNIPER START", datetime.now())
