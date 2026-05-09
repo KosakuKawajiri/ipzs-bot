@@ -73,7 +73,7 @@ def is_product_available(driver, url):
     try:
         driver.get(url)
 
-        time.sleep(1)
+        WebDriverWait
 
         html = driver.page_source.upper()
 
