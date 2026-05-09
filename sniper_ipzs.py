@@ -67,6 +67,9 @@ def get_links(retries=3):
 
 # Effettiva disponibilità prodotto - check con Selenium
 from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.common.exceptions import TimeoutException
 
 def is_product_available(driver, url):
 
@@ -90,6 +93,34 @@ def is_product_available(driver, url):
     except Exception as e:
         print(f"⚠️ Selenium availability check error: {e}")
         return False
+
+def smart_add_to_cart(driver, link, retries=3):
+
+    for attempt in range(1, retries + 1):
+
+        print(f"🛒 Tentativo add-to-cart #{attempt}")
+
+        try:
+
+            ok = add_to_cart_ipzs(driver, link)
+
+            if ok:
+                print("✅ Add-to-cart riuscito")
+                return True
+
+        except Exception as e:
+            print(f"⚠️ Errore add-to-cart: {e}")
+
+        # backoff progressivo
+        wait_time = attempt * 2
+
+        print(f"⏳ Attendo {wait_time}s prima del retry")
+
+        time.sleep(wait_time)
+
+    print("❌ Tutti i tentativi add-to-cart falliti")
+
+    return False
 
 def main():
     print("🚀 SNIPER START", datetime.now())
@@ -121,10 +152,15 @@ def main():
 
             print(f"🚨 Disponibile ORA: {link}")
 
-            ok = add_to_cart_ipzs(driver, link)
+            ok = smart_add_to_cart(driver, link)
 
             if ok:
                 triggered.append(link)
+                send(
+                    f"<b>SNIPER IPZS</b>\n"
+                    f"Moneta disponibile intercettata!\n\n"
+                    f"{link}"
+                )
 
         seen[link] = "AVAILABLE" if available else "NOT_AVAILABLE"
 
