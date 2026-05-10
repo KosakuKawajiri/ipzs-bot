@@ -396,8 +396,8 @@ def main():
             continue
             
         old_status = link_data.get("status")
-            print(f"🚨 Controllo sniper: {link}")
-            status = sniper_check_and_cart(driver, link)
+        print(f"🚨 Controllo sniper: {link}")
+        status = sniper_check_and_cart(driver, link)
 
             if status == "AVAILABLE":
 
