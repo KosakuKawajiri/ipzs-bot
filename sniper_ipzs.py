@@ -338,6 +338,7 @@ def main():
     # prova cookie
     if load_cookies(driver):
 
+        load_storage(driver)
         driver.get("https://www.shop.ipzs.it/it/customer/account/")
 
         if (
@@ -359,6 +360,8 @@ def main():
 
     warm_session(driver)
     save_cookies(driver)
+    save_storage(driver)
+    
 
     triggered = []
 
@@ -376,10 +379,9 @@ def main():
             if status == "AVAILABLE":
 
                 triggered.append(link)
-
                 seen[link] = "AVAILABLE_CARTED"
-
                 save_cookies(driver)
+                save_storage(driver)
 
                 send(
                     f"<b>SNIPER IPZS</b>\n"
