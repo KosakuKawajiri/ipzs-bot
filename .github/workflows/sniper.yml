@@ -33,6 +33,5 @@ jobs:
           git config --global user.name "bot"
           git config --global user.email "bot@github.com"
           git add sniper_seen.json
-          git commit -m "update seen files" || echo "no changes"
+          git diff --cached --quiet || git commit -m "update seen files"
           git push || echo "push fallito"
-          git add cookies_ipzs.pkl
