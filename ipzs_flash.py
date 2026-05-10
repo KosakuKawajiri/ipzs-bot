@@ -52,21 +52,33 @@ def login_ipzs(driver):
 
         time.sleep(2)
         
-        email_input = WebDriverWait(driver, 20).until(
-            EC.element_to_be_clickable((By.ID, "email"))
-        )
-        password_input = WebDriverWait(driver, 20).until(
-            EC.element_to_be_clickable((By.ID, "passw"))
-        )
+        #email_input = WebDriverWait(driver, 20).until(
+        #    EC.element_to_be_clickable((By.ID, "email"))
+        #)
+        #password_input = WebDriverWait(driver, 20).until(
+        #    EC.element_to_be_clickable((By.ID, "passw"))
+        #)
 
-        email_input.clear()
-        email_input.send_keys(os.getenv("IPZS_USERNAME"))
-        time.sleep(1)
+        #email_input.clear()
+        #email_input.send_keys(os.getenv("IPZS_USERNAME"))
+        #time.sleep(1)
 
         # rifetch elemento per evitare stale
-        password_input = driver.find_element(By.ID, "passw")
-        password_input.clear()
-        password_input.send_keys(os.getenv("IPZS_PASSWORD"))
+        #password_input = driver.find_element(By.ID, "passw")
+        #password_input.clear()
+        #password_input.send_keys(os.getenv("IPZS_PASSWORD"))
+        #time.sleep(1)
+
+        driver.find_element(By.ID, "email").clear()
+        driver.find_element(By.ID, "email").send_keys(
+            os.getenv("IPZS_USERNAME")
+        )
+        time.sleep(1)
+
+        driver.find_element(By.ID, "passw").clear()
+        driver.find_element(By.ID, "passw").send_keys(
+            os.getenv("IPZS_PASSWORD")
+        )
         time.sleep(1)
 
         # rifetch bottone
