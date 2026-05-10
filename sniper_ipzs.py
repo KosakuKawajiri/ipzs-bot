@@ -214,6 +214,7 @@ def sniper_check_and_cart(driver, url, retries=3):
             try:
 
                 buttons[0].click()
+                time.sleep(0.5)
 
             except Exception as e:
 
