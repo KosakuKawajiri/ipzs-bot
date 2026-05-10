@@ -38,13 +38,14 @@ def setup_driver_headless():
         service=service,
         options=options
     )
-    return driver
 
     driver.execute_script("""
     Object.defineProperty(navigator, 'webdriver', {
         get: () => undefined
     })
     """)
+    return driver
+
 
 def login_mtm(driver, username=None, password=None):
     """
