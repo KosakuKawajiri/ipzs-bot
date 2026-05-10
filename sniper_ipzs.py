@@ -381,7 +381,7 @@ def main():
             continue
             
         print(f"🚨 Controllo sniper: {link}")
-        status = sniper_check_and_cart(driver, link)
+        status = sniper_check_availability(driver, url)
 
         if status == "AVAILABLE":
             
