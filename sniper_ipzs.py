@@ -218,30 +218,21 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException
 
-def sniper_check_and_cart(driver, url, retries=3):
-
+def sniper_check_availability(driver, url, retries=3):
     for attempt in range(1, retries + 1):
-
         print(f"🔎 Tentativo sniper #{attempt}: {url}")
-
         try:
-
             driver.get(url)
 
             # ───────── Queue-it detection
             if "queue-it" in driver.current_url.lower():
-
                 print("⏳ Queue-it rilevato")
-
                 try:
                     WebDriverWait(driver, 120).until(
                         lambda d: "queue-it" not in d.current_url.lower()
                     )
-
                     print("✅ Uscito da Queue-it")
-
                     driver.get(url)
-
                 except TimeoutException:
                     print("❌ Timeout Queue-it")
                     return "CART_FAILED"
@@ -250,7 +241,6 @@ def sniper_check_and_cart(driver, url, retries=3):
             WebDriverWait(driver, 5).until(
                 EC.presence_of_element_located((By.TAG_NAME, "body"))
             )
-
             html = driver.page_source.upper()
 
             # ───────── Disponibilità negativa
@@ -266,92 +256,60 @@ def sniper_check_and_cart(driver, url, retries=3):
 
                 # retry intelligente
                 if attempt < retries:
-
                     wait_time = attempt * 2
-
                     print(f"⏳ Retry tra {wait_time}s")
-
                     time.sleep(wait_time)
-
                     continue
-
                 return "CART_FAILED"
 
             # ───────── Set quantità
             try:
-
                 qty = driver.find_element(By.ID, "qty")
-
                 qty.clear()
-
                 qty.send_keys("1")
-
             except Exception as e:
                 print(f"⚠️ Campo qty non trovato: {e}")
 
             # ───────── Click add-to-cart
             try:
-
-                buttons[0].click()
+                #buttons[0].click()
                 time.sleep(0.5)
 
             except Exception as e:
-
                 print(f"⚠️ Click fallito: {e}")
-
                 if attempt < retries:
-
                     wait_time = attempt * 2
-
                     print(f"⏳ Retry click tra {wait_time}s")
-
                     time.sleep(wait_time)
-
                     continue
-
                 return "CART_FAILED"
 
             # ───────── Verifica successo
             try:
-
                 WebDriverWait(driver, 8).until(
                     lambda d:
                         "/checkout/cart" in d.current_url
                         or len(d.find_elements(By.CSS_SELECTOR, ".message-success")) > 0
                 )
-
                 print("✅ ADD-TO-CART RIUSCITO")
-
                 return "AVAILABLE"
 
             except TimeoutException:
-
                 print("⚠️ Nessuna conferma add-to-cart")
-
                 if attempt < retries:
-
                     wait_time = attempt * 2
-
                     print(f"⏳ Retry conferma tra {wait_time}s")
-
-                    time.sleep(wait_time)
-
+                   time.sleep(wait_time)
                     continue
 
                 return "CART_FAILED"
 
         except Exception as e:
-
             print(f"⚠️ Errore sniper globale: {e}")
-
             if attempt < retries:
-
                 wait_time = attempt * 2
-
                 print(f"⏳ Retry globale tra {wait_time}s")
-
                 time.sleep(wait_time)
-
                 continue
 
             return "CART_FAILED"
