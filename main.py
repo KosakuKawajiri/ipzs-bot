@@ -98,9 +98,81 @@ def scrape_ipzs(url):
 
     return info
 
+
 def parse_tiratura(txt):
     nums = re.findall(r"\d+", txt.replace(".","").replace(" ",""))
     return int(nums[0]) if nums else None
+
+
+def parse_price(txt):
+        txt.replace("€", "")
+           .replace("EUR", "")
+           .replace(".", "")
+           .replace(",", ".")
+           .strip()
+    )
+
+    try:
+        return float(txt)
+    except:
+        return None
+
+
+def normalize_text(txt):
+    return (txt or "").lower().strip()
+
+
+def is_fs_2euro(product):
+    text = " ".join([
+        normalize_text(product.get("nome")),
+        normalize_text(product.get("finitura")),
+    ])
+
+    has_2euro = (
+        "2 euro" in text
+        or "2€" in text
+        or "2 eur" in text
+		or "2 €" in text
+		or "2 Euro" in text
+    )
+    has_fs = any(x in text for x in [
+        "fs",
+        "proof",
+        "fondo specchio"
+    ])
+    return has_2euro and has_fs
+
+
+def should_flash_cart(product):
+    tiratura = parse_tiratura(product.get("contingente", ""))
+    prezzo = parse_price(product.get("prezzo", ""))
+
+    if tiratura is None or prezzo is None:
+        return False, None
+    # RULE 1
+    if tiratura <= 500 and prezzo <= 2000:
+        return True, "RULE_1"
+    # RULE 2
+    if tiratura <= 1000 and prezzo <= 1000:
+        return True, "RULE_2"
+    # RULE 3
+    if tiratura <= 2000 and prezzo <= 500:
+        return True, "RULE_3"
+    # RULE 4
+    if tiratura <= 5000 and prezzo <= 250:
+        return True, "RULE_4"
+    # RULE 5
+    if tiratura <= 10000 and prezzo <= 500:
+        return True, "RULE_5"
+    # RULE 6
+    if (
+        tiratura <= 20000
+        and prezzo <= 100
+        and is_fs_2euro(product)
+    ):
+        return True, "RULE_6"
+
+    return False, None
 
 FORMATS = ["%d %b %Y","%d %B %Y","%d/%m/%Y","%Y-%m-%d"]
 def parse_date(txt):
