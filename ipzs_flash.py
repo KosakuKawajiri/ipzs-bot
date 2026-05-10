@@ -53,8 +53,23 @@ def login_ipzs(driver):
     email_input.send_keys(os.getenv("IPZS_USERNAME"))
     password_input.clear()
     password_input.send_keys(os.getenv("IPZS_PASSWORD"))
+    
     time.sleep(1)
-    driver.find_element(By.ID, "send3").click()
+    
+    try:
+        login_btn = WebDriverWait(driver, 20).until(
+            EC.element_to_be_clickable((By.ID, "send3"))
+        )
+        login_btn.click()
+        
+    except Exception as e:
+        print(f"❌ Bottone login non trovato: {e}")
+        print(f"🔎 URL corrente: {driver.current_url}")
+        try:
+            print(driver.page_source[:3000])
+        except:
+            pass
+        return False
        
     time.sleep(3)
 
