@@ -18,6 +18,12 @@ STORAGE_FILE = "ipzs_storage.json"
 
 import json
 
+# Effettiva disponibilità prodotto - check con Selenium
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.common.exceptions import TimeoutException
+
 def load_seen():
     if not os.path.exists(SEEN_FILE):
         return {}
@@ -210,13 +216,6 @@ def get_links(retries=3):
 
     print("❌ IPZS non raggiungibile")
     return set()
-
-
-# Effettiva disponibilità prodotto - check con Selenium
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.common.exceptions import TimeoutException
 
 def sniper_check_availability(driver, url, retries=3):
     for attempt in range(1, retries + 1):
