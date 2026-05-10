@@ -110,12 +110,16 @@ def load_storage(driver):
         driver.get("https://www.shop.ipzs.it")
         for k, v in storage.get("localStorage", {}).items():
             driver.execute_script(
-                f"localStorage.setItem('{k}', '{v}');"
+                "window.localStorage.setItem(arguments[0], arguments[1]);",
+                k,
+                v
             )
         for k, v in storage.get("sessionStorage", {}).items():
             driver.execute_script(
-                f"sessionStorage.setItem('{k}', '{v}');"
-            )            
+                "window.localStorage.setItem(arguments[0], arguments[1]);",
+                k,
+                v
+            )           
         driver.refresh()
         print("💾 Storage IPZS caricato")
         return True
