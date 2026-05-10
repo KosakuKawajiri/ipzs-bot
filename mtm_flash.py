@@ -154,7 +154,9 @@ def flash_purchase_mtm(product_url, username=None, password=None):
     - Aggiunge al carrello
     """
     driver = setup_driver_headless()
-
+    options.add_argument("--disable-blink-features=AutomationControlled")
+    options.add_experimental_option("excludeSwitches", ["enable-automation"])
+    options.add_experimental_option("useAutomationExtension", False)
     try:
         ok = login_mtm(driver, username=username, password=password)
 
