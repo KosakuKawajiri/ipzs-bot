@@ -70,7 +70,9 @@ def login_ipzs(driver):
         
     try:
         WebDriverWait(driver, 15).until(
-            EC.url_contains("/it/customer/account/")
+            lambda d:
+                "customer/account" in d.current_url.lower()
+                and "login" not in d.current_url.lower()
         )
         print("✅ Login IPZS riuscito.")
         return True
