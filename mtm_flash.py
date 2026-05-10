@@ -18,6 +18,15 @@ def setup_driver_headless():
     options.add_argument("--remote-debugging-port=9222")
     options.add_argument("--window-size=1920,1080")
     options.add_argument("--disable-blink-features=AutomationControlled")
+    options.add_argument("--disable-blink-features=AutomationControlled")
+    options.add_experimental_option("excludeSwitches", ["enable-automation"])
+    options.add_experimental_option("useAutomationExtension", False)
+
+    options.add_argument(
+        "user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) "
+        "Chrome/147.0.0.0 Safari/537.36"
+    )
 
     options.binary_location = "/usr/bin/google-chrome"
 
@@ -29,8 +38,13 @@ def setup_driver_headless():
         service=service,
         options=options
     )
-
     return driver
+
+    driver.execute_script("""
+    Object.defineProperty(navigator, 'webdriver', {
+        get: () => undefined
+    })
+    """)
 
 def login_mtm(driver, username=None, password=None):
     """
