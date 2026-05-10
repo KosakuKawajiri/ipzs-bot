@@ -2,7 +2,7 @@ import requests
 from bs4 import BeautifulSoup
 import time
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 import pickle
 
 # riutilizziamo le tue funzioni già esistenti
@@ -30,6 +30,30 @@ def load_seen():
 def save_seen(seen):
     with open(SEEN_FILE, "w", encoding="utf-8") as f:
         json.dump(seen, f, indent=2)
+
+
+def should_check(link_data):
+    if not isinstance(link_data, dict):
+        return True
+        
+    status = link_data.get("status")
+    last_check = link_data.get("last_check")
+    
+    if not last_check:
+        return True
+    try:
+        last_dt = datetime.fromisoformat(last_check)
+    except:
+        return True
+        
+    age = datetime.now() - last_dt
+
+    # prodotti già disponibili → ricontrollo ogni 24h
+    if status == "AVAILABLE_CARTED":
+        return age > timedelta(hours=24)
+        
+    # prodotti vecchi NON disponibili → ogni 6h
+    return age > timedelta(hours=6)
 
 
 def save_cookies(driver):
@@ -366,20 +390,23 @@ def main():
     triggered = []
 
     for link in current_links:
-
-        old_status = seen.get(link)
-
-        # trigger SOLO se prima NON disponibile
-        if old_status != "AVAILABLE_CARTED":
-
+        link_data = seen.get(link, {})
+        
+        if not should_check(link_data):
+            print(f"⏩ Skip intelligente: {link}")
+            continue
+            
+        old_status = link_data.get("status")
             print(f"🚨 Controllo sniper: {link}")
-
             status = sniper_check_and_cart(driver, link)
 
             if status == "AVAILABLE":
 
                 triggered.append(link)
-                seen[link] = "AVAILABLE_CARTED"
+                seen[link] = {
+                    "status": "AVAILABLE_CARTED",
+                    "last_check": datetime.now().isoformat()
+                }
                 save_cookies(driver)
                 save_storage(driver)
 
@@ -391,13 +418,19 @@ def main():
 
             elif status == "NOT_AVAILABLE":
 
-                seen[link] = "NOT_AVAILABLE"
+                seen[link] = {
+                    "status": "NOT_AVAILABLE",
+                    "last_check": datetime.now().isoformat()
+                }
 
             elif status == "CART_FAILED":
 
                 print("⚠️ Cart fallito ma prodotto disponibile")
 
-                seen[link] = "CART_FAILED"
+                seen[link] = {
+                    "status": "CART_FAILED",
+                    "last_check": datetime.now().isoformat()
+                }
 
                 send(
                     f"<b>SNIPER IPZS</b>\n"
