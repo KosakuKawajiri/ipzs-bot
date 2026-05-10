@@ -1,0 +1,3 @@
+from utils import send
+
+send("TEST TELEGRAM")
