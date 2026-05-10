@@ -35,10 +35,14 @@ MTM_ROOT   = "https://www.mtm-monaco.mc/index.php?route=common/home"
 
 # ──────────────── Telegram helper
 from utils import send
+from utils import file_lock
 
 # ──────────────── File helpers
 def ld(fp): return set(open(fp, encoding="utf-8").read().splitlines()) if os.path.exists(fp) else set()
 def sv(fp,s): open(fp,"w",encoding="utf-8").write("\n".join(sorted(s)))
+def sj(fp,d):
+    with file_lock:
+        open(fp,"w",encoding="utf-8").write(json.dumps(d, indent=2))
 def lj(fp):
     if not os.path.exists(fp):
         return {}
