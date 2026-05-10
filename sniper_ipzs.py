@@ -125,6 +125,16 @@ def load_storage(driver):
         return False
 
 
+def clear_session_files():
+    for file in [COOKIE_FILE, STORAGE_FILE]:
+        try:
+            if os.path.exists(file):
+                os.remove(file)
+                print(f"🧹 File sessione eliminato: {file}")
+        except Exception as e:
+            print(f"⚠️ Errore delete {file}: {e}")
+
+
 def warm_session(driver):
     try:
         warm_pages = [
@@ -377,8 +387,23 @@ def main():
         logged = login_ipzs(driver)
 
     if not logged:
-        print("❌ Login IPZS fallito")
+        print("⚠️ Primo login fallito → recovery")
         driver.quit()
+        clear_session_files()
+        time.sleep(5)
+        driver = setup_driver_headless()
+        logged = login_ipzs(driver)
+
+        if not logged:
+            print("❌ Recovery login fallito")
+            send(
+                "<b>SNIPER IPZS</b>\n"
+                "Recovery login IPZS fallito"
+            )
+            driver.quit()
+            return
+
+        print("✅ Recovery login riuscito")
         return
 
     warm_session(driver)
