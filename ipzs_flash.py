@@ -42,8 +42,8 @@ def login_ipzs(driver):
         return False
 
     # ─────────── Login ───────────
-    #driver.find_element(By.ID, "email").send_keys(os.getenv("IPZS_USERNAME"))
-    #driver.find_element(By.ID, "passw").send_keys(os.getenv("IPZS_PASSWORD"))
+    driver.find_element(By.ID, "email").send_keys(os.getenv("IPZS_USERNAME"))
+    driver.find_element(By.ID, "passw").send_keys(os.getenv("IPZS_PASSWORD"))
     driver.find_element(By.ID, "send3").click()
     
     email_input = WebDriverWait(driver, 20).until(
