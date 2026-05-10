@@ -27,22 +27,35 @@ def setup_driver_headless():
         "Chrome/147.0.0.0 Safari/537.36"
     )
 
-    options.binary_location = "/usr/bin/chromium-browser"
+    options.binary_location = "/usr/bin/chromium"
 
     options.page_load_strategy = "eager"
 
     service = Service()
 
-    driver = webdriver.Chrome(
-        service=service,
-        options=options
+    driver.execute_cdp_cmd(
+        "Page.addScriptToEvaluateOnNewDocument",
+        {
+            "source": """
+            Object.defineProperty(navigator, 'webdriver', {
+                get: () => undefined
+            });
+
+            Object.defineProperty(navigator, 'languages', {
+                get: () => ['it-IT', 'it']
+            });
+
+            Object.defineProperty(navigator, 'platform', {
+                get: () => 'Win32'
+            });
+
+            Object.defineProperty(navigator, 'plugins', {
+                get: () => [1, 2, 3, 4, 5]
+            });
+            """
+        }
     )
 
-    driver.execute_script("""
-    Object.defineProperty(navigator, 'webdriver', {
-        get: () => undefined
-    })
-    """)
     return driver
 
 
