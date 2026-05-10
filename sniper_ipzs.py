@@ -83,7 +83,9 @@ def warm_session(driver):
                 EC.presence_of_element_located((By.TAG_NAME, "body"))
             )
 
-            time.sleep(1)
+            WebDriverWait(driver, 5).until(
+                lambda d: d.execute_script("return document.readyState") == "complete"
+            )
 
         print("✅ Sessione riscaldata")
         return True
