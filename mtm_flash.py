@@ -33,6 +33,11 @@ def setup_driver_headless():
 
     service = Service()
 
+    driver = webdriver.Chrome(
+        service=service,
+        options=options
+    )
+    
     driver.execute_cdp_cmd(
         "Page.addScriptToEvaluateOnNewDocument",
         {
