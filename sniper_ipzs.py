@@ -404,7 +404,6 @@ def main():
             return
 
         print("✅ Recovery login riuscito")
-        return
 
     warm_session(driver)
     save_cookies(driver)
