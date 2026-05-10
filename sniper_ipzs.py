@@ -438,10 +438,10 @@ def main():
             )
 
         elif status == "NOT_AVAILABLE":
-                seen[link] = {
-                    "status": "NOT_AVAILABLE",
-                    "last_check": datetime.now().isoformat()
-                }
+            seen[link] = {
+                "status": "NOT_AVAILABLE",
+                "last_check": datetime.now().isoformat()
+            }
 
         elif status == "CART_FAILED":
             print("⚠️ Cart fallito ma prodotto disponibile")
