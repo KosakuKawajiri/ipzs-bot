@@ -41,26 +41,49 @@ def login_ipzs(driver):
         print(f"🔎 URL corrente: {driver.current_url}")
         return False
 
-    # ─────────── Login ───────────
-    email_input = WebDriverWait(driver, 20).until(
-        EC.presence_of_element_located((By.ID, "email"))
-    )
-    password_input = WebDriverWait(driver, 20).until(
-        EC.presence_of_element_located((By.ID, "passw"))
-    )
 
-    email_input.clear()
-    email_input.send_keys(os.getenv("IPZS_USERNAME"))
-    password_input.clear()
-    password_input.send_keys(os.getenv("IPZS_PASSWORD"))
-    
-    time.sleep(1)
-    
+    # ─────────── Login robusto anti-stale ───────────
     try:
+        WebDriverWait(driver, 20).until(
+            lambda d: "queue-it" not in d.current_url.lower()
+        )
+
+        time.sleep(2)
+        
+        email_input = WebDriverWait(driver, 20).until(
+            EC.element_to_be_clickable((By.ID, "email"))
+        )
+        password_input = WebDriverWait(driver, 20).until(
+            EC.element_to_be_clickable((By.ID, "passw"))
+        )
+
+        email_input.clear()
+        email_input.send_keys(os.getenv("IPZS_USERNAME"))
+        time.sleep(1)
+
+        # rifetch elemento per evitare stale
+        password_input = driver.find_element(By.ID, "passw")
+        password_input.clear()
+        password_input.send_keys(os.getenv("IPZS_PASSWORD"))
+        time.sleep(1)
+
+        # rifetch bottone
         login_btn = WebDriverWait(driver, 20).until(
             EC.element_to_be_clickable((By.ID, "send3"))
         )
+        time.sleep(1)
         login_btn.click()
+
+    except Exception as e:
+        print(f"❌ Errore compilazione login: {e}")
+        print(f"🔎 URL corrente: {driver.current_url}")
+
+    try:
+        print(driver.page_source[:3000])
+    except:
+        pass
+
+    return False
         
     except Exception as e:
         print(f"❌ Bottone login non trovato: {e}")
