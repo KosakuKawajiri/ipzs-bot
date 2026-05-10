@@ -14,6 +14,7 @@ URL = "https://www.shop.ipzs.it/it/catalog/category/view/s/monete/id/3/"
 
 SEEN_FILE = "sniper_seen.json"
 COOKIE_FILE = "cookies_ipzs.pkl"
+STORAGE_FILE = "ipzs_storage.json"
 
 import json
 
@@ -35,6 +36,20 @@ def save_cookies(driver):
     with open(COOKIE_FILE, "wb") as file:
         pickle.dump(driver.get_cookies(), file)
     print("🍪 Cookie IPZS salvati")
+
+
+def save_storage(driver):
+    storage = {
+        "localStorage": driver.execute_script(
+            "return {...localStorage};"
+        ),
+        "sessionStorage": driver.execute_script(
+            "return {...sessionStorage};"
+        )
+    }
+    with open(STORAGE_FILE, "w", encoding="utf-8") as f:
+        json.dump(storage, f)
+    print("💾 Storage IPZS salvato")
 
 
 def load_cookies(driver):
@@ -59,6 +74,32 @@ def load_cookies(driver):
     except Exception as e:
         print(f"⚠️ Errore load cookies: {e}")
         return False
+
+
+def load_storage(driver):
+    if not os.path.exists(STORAGE_FILE):
+        return False
+
+    try:
+        with open(STORAGE_FILE, "r", encoding="utf-8") as f:
+            storage = json.load(f)
+        driver.get("https://www.shop.ipzs.it")
+        for k, v in storage.get("localStorage", {}).items():
+            driver.execute_script(
+                f"localStorage.setItem('{k}', '{v}');"
+            )
+        for k, v in storage.get("sessionStorage", {}).items():
+            driver.execute_script(
+                f"sessionStorage.setItem('{k}', '{v}');"
+            )            
+        driver.refresh()
+        print("💾 Storage IPZS caricato")
+        return True
+
+    except Exception as e:
+        print(f"⚠️ Errore load storage: {e}")
+        return False
+
 
 def warm_session(driver):
     try:
