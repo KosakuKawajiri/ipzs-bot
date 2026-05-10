@@ -1,5 +1,8 @@
 import os
 import requests
+import threading
+
+file_lock = threading.Lock()
 
 def send(text: str) -> bool:
     token = os.getenv("TELEGRAM_TOKEN")
