@@ -311,7 +311,7 @@ def sniper_check_availability(driver, url, retries=3):
                 if attempt < retries:
                     wait_time = attempt * 2
                     print(f"⏳ Retry conferma tra {wait_time}s")
-                   time.sleep(wait_time)
+                    time.sleep(wait_time)
                     continue
 
                 return "CART_FAILED"
