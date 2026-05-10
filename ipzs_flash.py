@@ -10,7 +10,7 @@ def login_ipzs(driver):
     from selenium.webdriver.support import expected_conditions as EC
     login_url = "https://www.shop.ipzs.it/it/customer/account/login/"
     driver.get(login_url)
-
+    time.sleep(5)
     print(f"🌐 URL iniziale: {driver.current_url}")
 
     # ─────────── Gestione Queue-it ───────────
