@@ -18,7 +18,6 @@ def setup_driver_headless():
     options.add_argument("--remote-debugging-port=9222")
     options.add_argument("--window-size=1920,1080")
     options.add_argument("--disable-blink-features=AutomationControlled")
-    options.add_argument("--disable-blink-features=AutomationControlled")
     options.add_experimental_option("excludeSwitches", ["enable-automation"])
     options.add_experimental_option("useAutomationExtension", False)
 
@@ -28,7 +27,7 @@ def setup_driver_headless():
         "Chrome/147.0.0.0 Safari/537.36"
     )
 
-    options.binary_location = "/usr/bin/google-chrome"
+    options.binary_location = "/usr/bin/chromium-browser"
 
     options.page_load_strategy = "eager"
 
