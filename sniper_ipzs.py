@@ -398,47 +398,38 @@ def main():
         print(f"🚨 Controllo sniper: {link}")
         status = sniper_check_and_cart(driver, link)
 
-            if status == "AVAILABLE":
+        if status == "AVAILABLE":
+            
+            triggered.append(link)
+            seen[link] = {
+                "status": "AVAILABLE_CARTED",
+                "last_check": datetime.now().isoformat()
+            }
+            save_cookies(driver)
+            save_storage(driver)
+            send(
+                f"<b>SNIPER IPZS</b>\n"
+                f"Moneta disponibile intercettata!\n\n"
+                f"{link}"
+            )
 
-                triggered.append(link)
-                seen[link] = {
-                    "status": "AVAILABLE_CARTED",
-                    "last_check": datetime.now().isoformat()
-                }
-                save_cookies(driver)
-                save_storage(driver)
-
-                send(
-                    f"<b>SNIPER IPZS</b>\n"
-                    f"Moneta disponibile intercettata!\n\n"
-                    f"{link}"
-                )
-
-            elif status == "NOT_AVAILABLE":
-
+        elif status == "NOT_AVAILABLE":
                 seen[link] = {
                     "status": "NOT_AVAILABLE",
                     "last_check": datetime.now().isoformat()
                 }
 
-            elif status == "CART_FAILED":
-
-                print("⚠️ Cart fallito ma prodotto disponibile")
-
-                seen[link] = {
-                    "status": "CART_FAILED",
-                    "last_check": datetime.now().isoformat()
-                }
-
-                send(
-                    f"<b>SNIPER IPZS</b>\n"
-                    f"Prodotto disponibile ma add-to-cart FALLITO\n\n"
-                    f"{link}"
-                )
-
-        else:
-
-            print(f"ℹ️ Già disponibile in precedenza: {link}")
+        elif status == "CART_FAILED":
+            print("⚠️ Cart fallito ma prodotto disponibile")
+            seen[link] = {
+                "status": "CART_FAILED",
+                "last_check": datetime.now().isoformat()
+            }
+            send(
+                f"<b>SNIPER IPZS</b>\n"
+                f"Prodotto disponibile ma add-to-cart FALLITO\n\n"
+                f"{link}"
+            )
 
     driver.quit()
 
