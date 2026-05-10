@@ -78,20 +78,50 @@ def login_ipzs(driver):
         print(f"❌ Errore compilazione login: {e}")
         print(f"🔎 URL corrente: {driver.current_url}")
 
-    try:
-        print(driver.page_source[:3000])
-    except:
-        pass
-
-    return False
-        
-    except Exception as e:
-        print(f"❌ Bottone login non trovato: {e}")
-        print(f"🔎 URL corrente: {driver.current_url}")
         try:
             print(driver.page_source[:3000])
         except:
             pass
+
+        return False
+
+    # ─────────── Attesa redirect post-login ───────────
+    time.sleep(3)
+
+    if "queue-it" in driver.current_url.lower():
+        print("⏳ Queue-it rilevato dopo il login...")
+
+        try:
+            WebDriverWait(driver, 300).until(
+                lambda d: "queue-it" not in d.current_url.lower()
+            )
+
+            print(f"✅ Uscito dalla Queue-it post-login: {driver.current_url}")
+
+        except Exception as e:
+            print(f"❌ Timeout Queue-it post-login: {e}")
+            return False
+
+    # ─────────── Verifica login riuscito ───────────
+    try:
+        WebDriverWait(driver, 20).until(
+            lambda d:
+                "customer/account" in d.current_url.lower()
+                and "login" not in d.current_url.lower()
+        )
+
+        print("✅ Login IPZS riuscito.")
+        return True
+
+    except Exception as e:
+        print(f"❌ Login IPZS fallito: {e}")
+        print(f"🔎 URL finale: {driver.current_url}")
+
+        try:
+            print(driver.page_source[:3000])
+        except:
+            pass
+
         return False
        
 
