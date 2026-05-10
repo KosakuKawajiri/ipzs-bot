@@ -1,3 +1,10 @@
+# Python
+__pycache__/
+*.pyc
+
+# Sessioni Selenium
 cookies_ipzs.pkl
 ipzs_storage.json
-sniper_seen.json
+
+# OS
+.DS_Store
