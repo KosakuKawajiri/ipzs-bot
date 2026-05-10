@@ -361,7 +361,6 @@ def main():
 
     # prova cookie
     if load_cookies(driver):
-
         load_storage(driver)
         driver.get("https://www.shop.ipzs.it/it/customer/account/")
 
