@@ -61,7 +61,9 @@ from utils import file_lock
 
 # ──────────────── File helpers
 def ld(fp): return set(open(fp, encoding="utf-8").read().splitlines()) if os.path.exists(fp) else set()
-def sv(fp,s): open(fp,"w",encoding="utf-8").write("\n".join(sorted(s)))
+def sv(fp,s):
+	with file_lock:
+		open(fp,"w",encoding="utf-8").write("\n".join(sorted(s)))
 def sj(fp,d):
     with file_lock:
         open(fp,"w",encoding="utf-8").write(json.dumps(d, indent=2))
