@@ -65,15 +65,17 @@ def setup_driver_headless():
             Object.defineProperty(navigator, 'plugins', {
                 get: () => [1, 2, 3, 4, 5]
             });
+
+            Object.defineProperty(navigator, 'hardwareConcurrency', {
+                get: () => 8
+            });
+
+            Object.defineProperty(navigator, 'deviceMemory', {
+                get: () => 8
+            });
             """
         }
     )
-    
-    driver.execute_script("""
-    Object.defineProperty(navigator, 'deviceMemory', {
-        get: () => 8
-    });
-    """)
     
     driver.execute_cdp_cmd(
         "Emulation.setTimezoneOverride",
@@ -165,11 +167,12 @@ def add_to_cart_and_checkout(driver, product_url):
     Poi naviga alla pagina di checkout/cart.
     """
     driver.get(product_url)
-    time.sleep(2)  # attendi caricamento completo
+    human_delay(1.0, 2.5) # attendi caricamento completo
 
     # 1️⃣ Trova e clicca il bottone via ID
     try:
         add_btn = driver.find_element(By.ID, "button-cart")
+        human_delay(0.8, 1.8)
         add_btn.click()
         print("✅ Click sul pulsante Aggiungi al carrello eseguito.")
     except Exception as e:
@@ -197,9 +200,7 @@ def flash_purchase_mtm(product_url, username=None, password=None):
     - Aggiunge al carrello
     """
     driver = setup_driver_headless()
-    options.add_argument("--disable-blink-features=AutomationControlled")
-    options.add_experimental_option("excludeSwitches", ["enable-automation"])
-    options.add_experimental_option("useAutomationExtension", False)
+
     try:
         ok = login_mtm(driver, username=username, password=password)
 
