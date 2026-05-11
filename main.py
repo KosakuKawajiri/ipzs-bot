@@ -162,7 +162,7 @@ def is_fs_2euro(product):
     ])
 
     has_2euro = (
-        2 euro" in text
+        "2 euro" in text
         or "2€" in text
         or "2 eur" in text
         or "2 €" in text
