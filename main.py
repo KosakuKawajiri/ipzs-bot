@@ -78,11 +78,17 @@ def lj(fp):
 # ──────────────── IPZS scraping
 def get_links(url):
     try:
-        soup = BeautifulSoup(session.get(
-                                url,
-                                headers=HEADERS,
-                                timeout=(3, 6)
-                            ).content, "html.parser")
+        r = session.get(
+            url,
+            headers=HEADERS,
+            timeout=(3, 6)
+        )
+
+        if not is_valid_ipzs_page(r.text):
+            print(f"⚠️ HTML sospetto su category page: {url}")
+            return []
+
+        soup = BeautifulSoup(r.content, "html.parser")
         return [a["href"] for a in soup.select("a.product-item-link") if a.get("href")]
     except:
         return []
@@ -95,6 +101,9 @@ def scrape_ipzs(url):
                 timeout=(3, 6)
             )
         if r.status_code != 200:
+            return None
+		if not is_valid_ipzs_page(r.text):
+            print(f"⚠️ HTML sospetto su product page: {url}")
             return None
         soup = BeautifulSoup(r.content, "html.parser")
     except:
@@ -313,11 +322,17 @@ def spider(start, max_urls=50, max_depth=3):
         if url in visited or depth>max_depth: continue
         visited.add(url)
         try:
-            soup = BeautifulSoup(session.get(
-                                    url,
-                                    headers=HEADERS,
-                                    timeout=(3, 6)
-                                ).content,"html.parser")
+            r = session.get(
+                url,
+                headers=HEADERS,
+                timeout=(3, 6)
+            )
+
+            if not is_valid_ipzs_page(r.text):
+                print(f"⚠️ HTML sospetto su category page: {url}")
+                return []
+
+            soup = BeautifulSoup(r.content, "html.parser")
         except:
             continue
         if soup.select_one("h1.page-title span.base"):
