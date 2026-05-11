@@ -208,6 +208,8 @@ def should_flash_cart(product):
     return False, None
 
 FORMATS = ["%d %b %Y","%d %B %Y","%d/%m/%Y","%Y-%m-%d"]
+
+
 def parse_date(txt):
     for f in FORMATS:
         try:
@@ -215,6 +217,24 @@ def parse_date(txt):
         except:
             pass
     return None
+
+
+def is_valid_ipzs_page(html):
+    html = html.lower()
+    bad_signals = [
+        "queue-it",
+        "captcha",
+        "access denied",
+        "temporarily unavailable",
+    ]
+    if any(x in html for x in bad_signals):
+        return False
+    good_signals = [
+        "product-item-link",
+        "page-title",
+        "product-addtocart-button",
+    ]
+    return any(x in html for x in good_signals)
 
 # ──────────────── Notifiche standard
 def notify_new(prods, seen):
