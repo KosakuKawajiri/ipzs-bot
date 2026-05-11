@@ -451,7 +451,7 @@ def check_mtm_monaco():
     # 1. prendo la homepage e tutte le categorie product/category
     for i in range(3):
         try:
-            response = requests.get(MTM_ROOT, headers=headers, timeout=20)            
+            response = session.get(MTM_ROOT, headers=headers, timeout=20)            
 
             if response.status_code != 200:
                 print(f"⚠️ MTM status code anomalo: {response.status_code}")
@@ -483,7 +483,7 @@ def check_mtm_monaco():
     # 2. passo ciascuna categoria e prendo tutti i blocchi .product-thumb
     def fetch_category(cat_url):
         try:
-            response = requests.get(cat_url, headers=headers, timeout=10)
+            response = session.get(cat_url, headers=headers, timeout=10)
             soup = BeautifulSoup(response.content, "html.parser")
             return soup.select(".product-thumb")
         except:
