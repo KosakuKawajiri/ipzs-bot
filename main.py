@@ -133,11 +133,11 @@ def is_fs_2euro(product):
     ])
 
     has_2euro = (
-        "2 euro" in text
+        2 euro" in text
         or "2€" in text
         or "2 eur" in text
-		or "2 €" in text
-		or "2 Euro" in text
+        or "2 €" in text
+        or "2 Euro" in text
     )
     has_fs = any(x in text for x in [
         "fs",
