@@ -116,7 +116,6 @@ def parse_price(txt):
            .replace(",", ".")
            .strip()
     )
-
     try:
         return float(txt)
     except:
@@ -161,13 +160,13 @@ def should_flash_cart(product):
     if tiratura <= 1000 and prezzo <= 1000:
         return True, "RULE_2"
     # RULE 3
-    if tiratura <= 2000 and prezzo <= 500:
+    if tiratura <= 2000 and prezzo <= 300:
         return True, "RULE_3"
     # RULE 4
-    if tiratura <= 5000 and prezzo <= 250:
+    if tiratura <= 5000 and prezzo <= 200:
         return True, "RULE_4"
     # RULE 5
-    if tiratura <= 10000 and prezzo <= 500:
+    if tiratura <= 10000 and prezzo <= 100:
         return True, "RULE_5"
     # RULE 6
     if (
@@ -282,7 +281,7 @@ FLASH_LOG_FILE = "ipzs_flash_log.json"
 def flash_ipzs_cart(products):
     # 1️⃣ Filtra i prodotti ≤ soglia FLASH
     to_flash = []
-	for p in products:
+    for p in products:
         if "NON DISPONIBILE" in p["disponibilita"].upper():
             continue
         should_flash, rule = should_flash_cart(p)
@@ -357,7 +356,7 @@ def flash_ipzs_cart(products):
     # 6️⃣ Notifica Telegram
     if added:
         cart_url = "https://www.shop.ipzs.it/it/checkout/"
-        msg = "<b>Flash-cart IPZS!</b>\nAggiunte al carrello (tiratura ≤ 500):\n"
+        msg = "<b>Flash-cart IPZS!</b>\nMonete aggiunte al carrello secondo regole:\n"
         msg += "\n".join(f"- {t}" for t in added)
         msg += f"\n\n➡️ <a href=\"{cart_url}\">Vai al checkout IPZS</a>"
         print(f"✉️ flash_ipzs_cart → invio notifica Telegram per: {added}")
