@@ -1,8 +1,13 @@
 import os
 import time
+import random
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+
+# ─────────── Funzione random anti bot-detection ───────────
+def human_delay(a=0.4, b=1.3):
+    time.sleep(random.uniform(a, b))
 
 # ─────────── Login IPZS ───────────
 def login_ipzs(driver):
@@ -51,41 +56,24 @@ def login_ipzs(driver):
         )
 
         time.sleep(2)
-        
-        #email_input = WebDriverWait(driver, 20).until(
-        #    EC.element_to_be_clickable((By.ID, "email"))
-        #)
-        #password_input = WebDriverWait(driver, 20).until(
-        #    EC.element_to_be_clickable((By.ID, "passw"))
-        #)
-
-        #email_input.clear()
-        #email_input.send_keys(os.getenv("IPZS_USERNAME"))
-        #time.sleep(1)
-
-        # rifetch elemento per evitare stale
-        #password_input = driver.find_element(By.ID, "passw")
-        #password_input.clear()
-        #password_input.send_keys(os.getenv("IPZS_PASSWORD"))
-        #time.sleep(1)
 
         driver.find_element(By.ID, "email").clear()
         driver.find_element(By.ID, "email").send_keys(
             os.getenv("IPZS_USERNAME")
         )
-        time.sleep(1)
+        human_delay()
 
         driver.find_element(By.ID, "passw").clear()
         driver.find_element(By.ID, "passw").send_keys(
             os.getenv("IPZS_PASSWORD")
         )
-        time.sleep(1)
+        human_delay()
 
         # rifetch bottone
         login_btn = WebDriverWait(driver, 20).until(
             EC.element_to_be_clickable((By.ID, "send3"))
         )
-        time.sleep(1)
+        human_delay()
         login_btn.click()
 
     except Exception as e:
