@@ -284,7 +284,7 @@ def sniper_check_availability(driver, url, retries=3):
 
             # ───────── Click add-to-cart
             try:
-                #buttons[0].click()
+                buttons[0].click()
                 time.sleep(0.5)
 
             except Exception as e:
@@ -399,7 +399,7 @@ def main():
             continue
             
         print(f"🚨 Controllo sniper: {link}")
-        status = sniper_check_availability(driver, url)
+        status = sniper_check_availability(driver, link)
 
         if status == "AVAILABLE":
             
