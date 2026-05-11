@@ -74,7 +74,6 @@ def lj(fp):
     except json.JSONDecodeError:
         print(f"⚠️ Il file {fp} è corrotto o vuoto, verrà ignorato.")
         return {}
-def sj(fp,d): open(fp,"w",encoding="utf-8").write(json.dumps(d, indent=2))
 
 # ──────────────── IPZS scraping
 def get_links(url):
