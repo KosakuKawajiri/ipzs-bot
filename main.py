@@ -109,6 +109,7 @@ def parse_tiratura(txt):
 
 
 def parse_price(txt):
+    txt = (
         txt.replace("€", "")
            .replace("EUR", "")
            .replace(".", "")
@@ -280,12 +281,16 @@ FLASH_LOG_FILE = "ipzs_flash_log.json"
 
 def flash_ipzs_cart(products):
     # 1️⃣ Filtra i prodotti ≤ soglia FLASH
-    to_flash = [
-        p for p in products
-        if (t := parse_tiratura(p["contingente"])) is not None
-           and t <= IPZS_FLASH
-           and "NON DISPONIBILE" not in p["disponibilita"].upper()
-    ]
+    to_flash = []
+	for p in products:
+        if "NON DISPONIBILE" in p["disponibilita"].upper():
+            continue
+        should_flash, rule = should_flash_cart(p)
+        
+        if should_flash:
+            p["flash_rule"] = rule
+            to_flash.append(p)
+            
     print(f"🔍 flash_ipzs_cart → prodotti candidati (≤{IPZS_FLASH}): {[p['link'] for p in to_flash]}")
 
     if not to_flash:
