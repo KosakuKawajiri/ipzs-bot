@@ -1,6 +1,7 @@
 # mtm_flash.py
 import os
 import time
+import random
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
@@ -28,11 +29,18 @@ def setup_driver_headless():
     )
 
     options.binary_location = "/usr/bin/chromium"
-
     options.page_load_strategy = "eager"
-
     service = Service()
+    
+    viewports = [
+        (1920, 1080),
+        (1366, 768),
+        (1536, 864),
+        (1600, 900),
+    ]
 
+    w, h = random.choice(viewports)
+    options.add_argument(f"--window-size={w},{h}")
     driver = webdriver.Chrome(
         service=service,
         options=options
@@ -60,7 +68,42 @@ def setup_driver_headless():
             """
         }
     )
+    
+    driver.execute_script("""
+    Object.defineProperty(navigator, 'deviceMemory', {
+        get: () => 8
+    });
+    """)
+    
+    driver.execute_cdp_cmd(
+        "Emulation.setTimezoneOverride",
+        {
+            "timezoneId": "Europe/Rome"
+        }
+    )
+    
+    driver.execute_script("""
+    const getParameter = WebGLRenderingContext.prototype.getParameter;
 
+    WebGLRenderingContext.prototype.getParameter = function(parameter) {
+
+        if (parameter === 37445) {
+            return 'Intel Inc.';
+        }
+        if (parameter === 37446) {
+            return 'Intel Iris OpenGL Engine';
+        }
+        return getParameter.call(this, parameter);
+    };
+    """)
+
+    driver.execute_script("""
+    const toDataURL = HTMLCanvasElement.prototype.toDataURL;
+
+    HTMLCanvasElement.prototype.toDataURL = function() {
+        return toDataURL.apply(this, arguments);
+    };
+    """)
     return driver
 
 
