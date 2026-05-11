@@ -2,6 +2,8 @@ from mtm_flash import setup_driver_headless, login_mtm, add_to_cart_and_checkout
 from ipzs_flash import login_ipzs, add_to_cart_ipzs
 
 import requests, re, os, json, time
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 from bs4 import BeautifulSoup
 from datetime import datetime, timedelta
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -30,6 +32,26 @@ CATEGORY_URLS = [
 ]
 DOMAIN = "www.shop.ipzs.it"
 
+# ──────────────── Requests session hardening
+session = requests.Session()
+retry = Retry(
+    total=3,
+    backoff_factor=0.5,
+    status_forcelist=[429, 500, 502, 503, 504],
+)
+
+adapter = HTTPAdapter(max_retries=retry)
+session.mount("https://", adapter)
+session.mount("http://", adapter)
+
+HEADERS = {
+    "User-Agent": (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) "
+        "Chrome/136.0.0.0 Safari/537.36"
+    )
+}
+
 # ──────────────── MTM Monaco Config
 MTM_ROOT   = "https://www.mtm-monaco.mc/index.php?route=common/home"
 
@@ -57,14 +79,22 @@ def sj(fp,d): open(fp,"w",encoding="utf-8").write(json.dumps(d, indent=2))
 # ──────────────── IPZS scraping
 def get_links(url):
     try:
-        soup = BeautifulSoup(requests.get(url, timeout=10).content, "html.parser")
+        soup = BeautifulSoup(session.get(
+                                url,
+                                headers=HEADERS,
+                                timeout=(3, 6)
+                            ).content, "html.parser")
         return [a["href"] for a in soup.select("a.product-item-link") if a.get("href")]
     except:
         return []
 
 def scrape_ipzs(url):
     try:
-        r = requests.get(url, timeout=10)
+        r = session.get(
+                url,
+                headers=HEADERS,
+                timeout=(3, 6)
+            )
         if r.status_code != 200:
             return None
         soup = BeautifulSoup(r.content, "html.parser")
@@ -264,7 +294,11 @@ def spider(start, max_urls=50, max_depth=3):
         if url in visited or depth>max_depth: continue
         visited.add(url)
         try:
-            soup = BeautifulSoup(requests.get(url,timeout=10).content,"html.parser")
+            soup = BeautifulSoup(session.get(
+                                    url,
+                                    headers=HEADERS,
+                                    timeout=(3, 6)
+                                ).content,"html.parser")
         except:
             continue
         if soup.select_one("h1.page-title span.base"):
