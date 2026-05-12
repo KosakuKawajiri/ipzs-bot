@@ -7,6 +7,9 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
 
+# ─────────── Funzione random anti bot-detection ───────────
+def human_delay(a=0.4, b=1.3):
+    time.sleep(random.uniform(a, b))
 
 # ─────────────── Login e carrello MTM Monaco
 def setup_driver_headless():
