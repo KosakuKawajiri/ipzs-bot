@@ -92,9 +92,9 @@ def get_links(url):
 
         soup = BeautifulSoup(r.content, "html.parser")
         return [a["href"] for a in soup.select("a.product-item-link") if a.get("href")]
-	except Exception as e:
-        print(f"Errore scrape_ipzs: {e}")
-        return None
+    except Exception as e:
+        print(f"Errore get_links: {e}")
+        return []
 
 def scrape_ipzs(url):
     try:
@@ -160,8 +160,8 @@ def parse_price(txt):
     )
     try:
         return float(txt)
-	except Exception as e:
-        print(f"Errore scrape_ipzs: {e}")
+    except Exception as e:
+        print(f"Errore parse_price: {e}")
         return None
 
 
@@ -494,9 +494,9 @@ def check_mtm_monaco():
             response = session.get(cat_url, headers=headers, timeout=10)
             soup = BeautifulSoup(response.content, "html.parser")
             return soup.select(".product-thumb")
-		except Exception as e:
-            print(f"Errore scrape_ipzs: {e}")
-            return None
+        except Exception as e:
+            print(f"Errore fetch_category: {e}")
+            return []
 
     from concurrent.futures import as_completed
 
@@ -532,7 +532,7 @@ def check_mtm_monaco():
                 print(f"⚡ TARGET: {title} - STOP anticipato, trovata moneta interessante")
 
                 # 🚀 STOP anticipato
-				handle_mtm_checkout(new_products, seen)
+                handle_mtm_checkout(new_products, seen)
                 return
         
 def handle_mtm_checkout(new_products, seen):
@@ -598,8 +598,8 @@ def main():
     def safe_scrape(url):
         try:
             return scrape_ipzs(url)
-	    except Exception as e:
-            print(f"Errore scrape_ipzs: {e}")
+        except Exception as e:
+            print(f"Errore safe_scrape: {e}")
             return None
 
     prods = []
