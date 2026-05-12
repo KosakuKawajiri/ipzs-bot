@@ -104,7 +104,7 @@ def scrape_ipzs(url):
             )
         if r.status_code != 200:
             return None
-		if not is_valid_ipzs_page(r.text):
+        if not is_valid_ipzs_page(r.text):
             print(f"⚠️ HTML sospetto su product page: {url}")
             return None
         soup = BeautifulSoup(r.content, "html.parser")
