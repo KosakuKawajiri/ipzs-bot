@@ -1,5 +1,9 @@
 name: IPZS Sniper
 
+concurrency:
+  group: ipzs-sniper
+  cancel-in-progress: false
+
 on:
   schedule:
     - cron: "*/2 * * * *"
