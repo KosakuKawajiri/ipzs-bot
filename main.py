@@ -203,13 +203,13 @@ def should_flash_cart(product):
     if tiratura <= 1000 and prezzo <= 1000:
         return True, "RULE_2"
     # RULE 3
-    if tiratura <= 2000 and prezzo <= 300:
+    if tiratura <= 2000 and prezzo <= 200:
         return True, "RULE_3"
     # RULE 4
-    if tiratura <= 5000 and prezzo <= 200:
+    if tiratura <= 5000 and prezzo <= 130:
         return True, "RULE_4"
     # RULE 5
-    if tiratura <= 10000 and prezzo <= 100:
+    if tiratura <= 10000 and prezzo <= 80:
         return True, "RULE_5"
     # RULE 6
     if (
@@ -351,20 +351,30 @@ def spider(start, max_urls=50, max_depth=3):
                 queue.append((h,depth+1))
     return prods
 
-# ──────────────── Flash-cart IPZS - Checkout carrello (tiratura ≤ 500)
+# ──────────────── Flash-cart IPZS - Checkout carrello
 FLASH_LOG_FILE = "ipzs_flash_log.json"
 
 def flash_ipzs_cart(products):
-    # 1️⃣ Filtra i prodotti ≤ soglia FLASH
+    # 1️⃣ Filtra prodotti da aggiungere automaticamente al carrello
+    # Solo RULE_1, RULE_2, RULE_3 e RULE_6 fanno flash-cart.
+    # RULE_4 e RULE_5 restano solo alert Telegram.
     to_flash = []
     for p in products:
         if "NON DISPONIBILE" in p["disponibilita"].upper():
             continue
         should_flash, rule = should_flash_cart(p)
-        
-        if should_flash:
-            p["flash_rule"] = rule
-            to_flash.append(p)
+
+        # Nessuna regola matchata
+        if not should_flash:
+            continue
+        # Solo queste regole fanno add-to-cart automatico
+        if rule not in ["RULE_1", "RULE_2", "RULE_3", "RULE_6"]:
+            print(f"ℹ️ Solo alert Telegram ({rule}) → {p['nome']}")
+            continue
+
+        p["flash_rule"] = rule
+        to_flash.append(p)
+        print(f"🔥 Flash-cart abilitato ({rule}) → {p['nome']}")
             
     print(f"🔍 flash_ipzs_cart → prodotti candidati (≤{IPZS_FLASH}): {[p['link'] for p in to_flash]}")
 
