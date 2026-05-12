@@ -92,8 +92,9 @@ def get_links(url):
 
         soup = BeautifulSoup(r.content, "html.parser")
         return [a["href"] for a in soup.select("a.product-item-link") if a.get("href")]
-    except:
-        return []
+	except Exception as e:
+        print(f"Errore scrape_ipzs: {e}")
+        return None
 
 def scrape_ipzs(url):
     try:
@@ -107,8 +108,9 @@ def scrape_ipzs(url):
         if not is_valid_ipzs_page(r.text):
             print(f"⚠️ HTML sospetto su product page: {url}")
             return None
-        soup = BeautifulSoup(r.content, "html.parser")
-    except:
+        soup = BeautifulSoup(r.content, "html.parser") 
+    except Exception as e:
+        print(f"Errore scrape_ipzs: {e}")
         return None
 
     info = {"link": url}
@@ -158,7 +160,8 @@ def parse_price(txt):
     )
     try:
         return float(txt)
-    except:
+	except Exception as e:
+        print(f"Errore scrape_ipzs: {e}")
         return None
 
 
@@ -243,9 +246,12 @@ def is_valid_ipzs_page(html):
     good_signals = [
         "product-item-link",
         "page-title",
+		"catalog-product-view",
+        "catalog-category-view",
         "product-addtocart-button",
     ]
-    return any(x in html for x in good_signals)
+    score = sum(1 for x in good_signals if x in html)
+    return score >= 1
 
 # ──────────────── Notifiche standard
 def notify_new(prods, seen):
@@ -332,7 +338,7 @@ def spider(start, max_urls=50, max_depth=3):
 
             if not is_valid_ipzs_page(r.text):
                 print(f"⚠️ HTML sospetto su category page: {url}")
-                return []
+                continue
 
             soup = BeautifulSoup(r.content, "html.parser")
         except:
@@ -488,8 +494,9 @@ def check_mtm_monaco():
             response = session.get(cat_url, headers=headers, timeout=10)
             soup = BeautifulSoup(response.content, "html.parser")
             return soup.select(".product-thumb")
-        except:
-            return []
+		except Exception as e:
+            print(f"Errore scrape_ipzs: {e}")
+            return None
 
     from concurrent.futures import as_completed
 
@@ -525,7 +532,8 @@ def check_mtm_monaco():
                 print(f"⚡ TARGET: {title} - STOP anticipato, trovata moneta interessante")
 
                 # 🚀 STOP anticipato
-                return handle_mtm_checkout(new_products, seen)
+				handle_mtm_checkout(new_products, seen)
+                return
         
 def handle_mtm_checkout(new_products, seen):
     print(f"🆕 Nuovi prodotti trovati MTM: {len(new_products)}")
@@ -569,9 +577,10 @@ def handle_mtm_checkout(new_products, seen):
     if not added_titles:
         print("ℹ️ Nessun prodotto interessante MTM")
     
-    with open(MTM_SEEN_FILE, "w", encoding="utf-8") as f:
-        for url in seen:
-            f.write(url + "\n")
+    with file_lock:
+        with open(MTM_SEEN_FILE, "w", encoding="utf-8") as f:
+            for url in seen:
+                f.write(url + "\n")
 
 # ──────────────── MAIN
 def main():
@@ -589,7 +598,8 @@ def main():
     def safe_scrape(url):
         try:
             return scrape_ipzs(url)
-        except:
+	    except Exception as e:
+            print(f"Errore scrape_ipzs: {e}")
             return None
 
     prods = []
