@@ -443,7 +443,11 @@ def flash_ipzs_cart(products):
     if added:
         cart_url = "https://www.shop.ipzs.it/it/checkout/"
         msg = "<b>Flash-cart IPZS!</b>\nMonete aggiunte al carrello secondo regole:\n"
-        msg += "\n".join(f"- {t}" for t in added)
+        msg += "\n".join(
+            f"- {p['nome']} ({p['flash_rule']})"
+            for p in to_flash
+            if p["nome"] in added
+        )
         msg += f"\n\n➡️ <a href=\"{cart_url}\">Vai al checkout IPZS</a>"
         print(f"✉️ flash_ipzs_cart → invio notifica Telegram per: {added}")
         send(msg)
