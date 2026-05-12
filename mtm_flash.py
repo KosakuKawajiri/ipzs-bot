@@ -109,6 +109,7 @@ def setup_driver_headless():
         return toDataURL.apply(this, arguments);
     };
     """)
+    driver.set_page_load_timeout(30)
     return driver
 
 
