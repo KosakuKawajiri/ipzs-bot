@@ -2,14 +2,14 @@ name: IPZS Sniper
 
 concurrency:
   group: ipzs-sniper
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 on:
   schedule:
     # Dicembre → Maggio
-    - cron: "*/2 6-21 * 12,1,2,3,4,5 *"
+    - cron: "*/6 6-21 * 12,1,2,3,4,5 *"
     # Giugno → Novembre
-    - cron: "*/2 7-22 * 6,7,8,9,10,11 *"
+    - cron: "*/6 7-22 * 6,7,8,9,10,11 *"
   workflow_dispatch:
 
 jobs:
