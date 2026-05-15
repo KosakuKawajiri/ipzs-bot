@@ -42,6 +42,6 @@ jobs:
         run: |
           git config --global user.name "bot"
           git config --global user.email "bot@github.com"
-          git add seen.txt sniper_seen.json ipzs_flash_log.json
+          git add seen.txt sniper_seen.json ipzs_flash_log.json || true
           git diff --cached --quiet || git commit -m "update seen files"
           git push || echo "push fallito"
