@@ -2,7 +2,7 @@ import requests
 from bs4 import BeautifulSoup
 import time
 import os
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 import pickle
 
 # riutilizziamo le tue funzioni già esistenti
@@ -13,6 +13,7 @@ from mtm_flash import setup_driver_headless
 URL = "https://www.shop.ipzs.it/it/catalog/category/view/s/monete/id/3/"
 
 SEEN_FILE = "sniper_seen.json"
+FLASH_LOG_FILE = "ipzs_flash_log.json"
 COOKIE_FILE = "cookies_ipzs.pkl"
 STORAGE_FILE = "ipzs_storage.json"
 
@@ -37,18 +38,46 @@ def load_seen():
     except:
         return {}
 
+
 def save_seen(seen):
     with open(SEEN_FILE, "w", encoding="utf-8") as f:
         json.dump(seen, f, indent=2)
 
 
+def load_flash_log():
+    if not os.path.exists(FLASH_LOG_FILE):
+        return {}
+    try:
+        with open(FLASH_LOG_FILE, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except:
+        return {}
+
+
+def save_flash_log(log):
+    with open(FLASH_LOG_FILE, "w", encoding="utf-8") as f:
+        json.dump(log, f, indent=2)
+
+
+def flash_recently_triggered(log, link):
+    if link not in log:
+        return False
+    try:
+        saved = date.fromisoformat(log[link])
+    except:
+        return False
+    return (date.today() - saved).days < 30
+
+
+def update_flash_log(log, link):
+    log[link] = date.today().isoformat()
+
+
 def should_check(link_data):
     if not isinstance(link_data, dict):
-        return True
-        
+        return True        
     status = link_data.get("status")
     last_check = link_data.get("last_check")
-    
     if not last_check:
         return True
     try:
@@ -57,11 +86,9 @@ def should_check(link_data):
         return True
         
     age = datetime.now() - last_dt
-
     # prodotti già disponibili → ricontrollo ogni 24h
     if status == "AVAILABLE_CARTED":
         return age > timedelta(hours=24)
-        
     # prodotti vecchi NON disponibili → ogni 6h
     return age > timedelta(hours=6)
 
@@ -333,6 +360,7 @@ def main():
     print("🚀 SNIPER START", datetime.now())
 
     seen = load_seen()
+    flash_log = load_flash_log()
     current_links = get_links()
 
     if not current_links:
@@ -392,6 +420,11 @@ def main():
     triggered = []
 
     for link in current_links:
+        # cooldown business 30 giorni
+        if flash_recently_triggered(flash_log, link):
+            print(f"🧊 Cooldown flash attivo: {link}")
+            continue
+            
         link_data = seen.get(link, {})
         
         if not should_check(link_data):
@@ -408,6 +441,7 @@ def main():
                 "status": "AVAILABLE_CARTED",
                 "last_check": datetime.now().isoformat()
             }
+            update_flash_log(flash_log, link)
             save_cookies(driver)
             save_storage(driver)
             send(
@@ -428,6 +462,7 @@ def main():
                 "status": "CART_FAILED",
                 "last_check": datetime.now().isoformat()
             }
+            update_flash_log(flash_log, link)
             send(
                 f"<b>SNIPER IPZS</b>\n"
                 f"Prodotto disponibile ma add-to-cart FALLITO\n\n"
@@ -437,6 +472,7 @@ def main():
     driver.quit()
 
     save_seen(seen)
+    save_flash_log(flash_log)
 
     print(f"✅ Trigger effettuati: {len(triggered)}")
 
