@@ -153,7 +153,7 @@ def load_storage(driver):
             )
         for k, v in storage.get("sessionStorage", {}).items():
             driver.execute_script(
-                "window.localStorage.setItem(arguments[0], arguments[1]);",
+                "window.sessionStorage.setItem(arguments[0], arguments[1]);",
                 k,
                 v
             )           
@@ -442,6 +442,7 @@ def main():
                 "last_check": datetime.now().isoformat()
             }
             update_flash_log(flash_log, link)
+            save_flash_log(flash_log)
             save_cookies(driver)
             save_storage(driver)
             send(
@@ -463,6 +464,7 @@ def main():
                 "last_check": datetime.now().isoformat()
             }
             update_flash_log(flash_log, link)
+            save_flash_log(flash_log)
             send(
                 f"<b>SNIPER IPZS</b>\n"
                 f"Prodotto disponibile ma add-to-cart FALLITO\n\n"
