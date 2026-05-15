@@ -142,5 +142,9 @@
   "https://www.shop.ipzs.it/it/5-legnano48-2ms10-26f0013.html": {
     "status": "AVAILABLE_CARTED",
     "last_check": "2026-05-14T22:47:37.021398"
+  },
+  "https://www.shop.ipzs.it/it/2-sfrancesco-proof-comm248-2ms10-26p0006.html": {
+    "status": "NOT_AVAILABLE",
+    "last_check": "2026-05-15T10:39:09.144409"
   }
 }
