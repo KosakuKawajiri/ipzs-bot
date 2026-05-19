@@ -366,13 +366,28 @@ def main():
     if not current_links:
         print("⚠️ Nessun link ottenuto")
         return
-    
-    driver = setup_driver_headless()
-    driver.execute_script("""
-    Object.defineProperty(navigator, 'webdriver', {get: () => undefined});
-    Object.defineProperty(navigator, 'languages', {get: () => ['it-IT', 'it']});
-    Object.defineProperty(navigator, 'plugins', {get: () => [1,2,3,4,5]});
-    """)
+
+    driver = None
+
+    for attempt in range(3):
+        try:
+            driver = setup_driver_headless()
+            driver.execute_script("""
+            Object.defineProperty(navigator, 'webdriver', {get: () => undefined});
+            Object.defineProperty(navigator, 'languages', {get: () => ['it-IT', 'it']});
+            Object.defineProperty(navigator, 'plugins', {get: () => [1,2,3,4,5]});
+            """)
+            break
+        except Exception as e:
+            print(f"⚠️ Chrome startup failed #{attempt+1}: {e}")
+            time.sleep(10)
+
+    if not driver:
+        send(
+            "<b>SNIPER IPZS</b>\n"
+            "Chrome startup fallito"
+        )
+        return
 
     logged = False
 
