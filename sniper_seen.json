@@ -33,7 +33,7 @@
   },
   "https://www.shop.ipzs.it/it/50-ita-usa-2026-revproof48-2ms10-26p0019.html": {
     "status": "NOT_AVAILABLE",
-    "last_check": "2026-06-02T18:59:21.401704"
+    "last_check": "2026-06-03T11:58:56.206521"
   },
   "https://www.shop.ipzs.it/it/5-fao48-2ms10-26p0020.html": {
     "status": "AVAILABLE_CARTED",
@@ -49,7 +49,7 @@
   },
   "https://www.shop.ipzs.it/it/100-ferrari-revproof48-2ms10-26p0017.html": {
     "status": "NOT_AVAILABLE",
-    "last_check": "2026-06-02T18:59:24.206125"
+    "last_check": "2026-06-03T11:58:54.296529"
   },
   "https://www.shop.ipzs.it/it/5-ssc-napoli48-2ms10-26p0022.html": {
     "status": "AVAILABLE_CARTED",
@@ -57,11 +57,11 @@
   },
   "https://www.shop.ipzs.it/it/25-colosseo-ag48-2ms10-26f0007.html": {
     "status": "NOT_AVAILABLE",
-    "last_check": "2026-06-02T18:59:25.521321"
+    "last_check": "2026-06-03T11:58:56.581452"
   },
   "https://www.shop.ipzs.it/it/6-ferrari-trittico-revproof48-2ms10-26p0016.html": {
     "status": "NOT_AVAILABLE",
-    "last_check": "2026-06-02T18:59:16.441500"
+    "last_check": "2026-06-03T11:58:53.613234"
   },
   "https://www.shop.ipzs.it/it/serie-9pz-5-barocco-leccese48-2ms10-26f0006.html": {
     "status": "AVAILABLE_CARTED",
@@ -109,7 +109,7 @@
   },
   "https://www.shop.ipzs.it/it/075-giglio-au48-2ms10-26f0017.html": {
     "status": "NOT_AVAILABLE",
-    "last_check": "2026-06-02T18:59:20.212701"
+    "last_check": "2026-06-03T11:58:56.977254"
   },
   "https://www.shop.ipzs.it/it/20-olimpiadi-au-2026-revproof48-2ms10-26p0001.html": {
     "status": "AVAILABLE_CARTED",
@@ -121,7 +121,7 @@
   },
   "https://www.shop.ipzs.it/it/10-pinocchio-proof48-2ms10-26p0009.html": {
     "status": "NOT_AVAILABLE",
-    "last_check": "2026-06-02T18:59:22.957950"
+    "last_check": "2026-06-03T11:58:52.724536"
   },
   "https://www.shop.ipzs.it/it/6-voto-donne48-2ms10-26f0011.html": {
     "status": "AVAILABLE_CARTED",
@@ -137,10 +137,14 @@
   },
   "https://www.shop.ipzs.it/it/serie-12pz48-2ms10-26p0024.html": {
     "status": "NOT_AVAILABLE",
-    "last_check": "2026-06-02T18:59:18.442581"
+    "last_check": "2026-06-03T11:58:55.408463"
   },
   "https://www.shop.ipzs.it/it/5-beretta-ag48-2ms10-26p0012.html": {
     "status": "AVAILABLE_CARTED",
     "last_check": "2026-05-15T20:14:19.314418"
+  },
+  "https://www.shop.ipzs.it/it/5-cucina-unesco-ag-fdc48-2ms10-26f0023.html": {
+    "status": "NOT_AVAILABLE",
+    "last_check": "2026-06-03T11:58:53.235192"
   }
 }
